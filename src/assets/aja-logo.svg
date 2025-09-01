@@ -1,0 +1,39 @@
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f7fafc;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="40" cy="40" r="38" fill="url(#logoGradient)" stroke="#2d3748" stroke-width="2"/>
+  
+  <!-- Scales of Justice -->
+  <g transform="translate(40, 35)">
+    <!-- Central pillar -->
+    <rect x="-1" y="-15" width="2" height="30" fill="url(#textGradient)"/>
+    
+    <!-- Top bar -->
+    <rect x="-12" y="-15" width="24" height="3" fill="url(#textGradient)"/>
+    
+    <!-- Left scale -->
+    <circle cx="-8" cy="-5" r="6" fill="none" stroke="url(#textGradient)" stroke-width="2"/>
+    <line x1="-8" y1="-5" x2="-8" y2="5" stroke="url(#textGradient)" stroke-width="2"/>
+    
+    <!-- Right scale -->
+    <circle cx="8" cy="-5" r="6" fill="none" stroke="url(#textGradient)" stroke-width="2"/>
+    <line x1="8" y1="-5" x2="8" y2="5" stroke="url(#textGradient)" stroke-width="2"/>
+    
+    <!-- Scale pans -->
+    <ellipse cx="-8" cy="8" rx="5" ry="2" fill="url(#textGradient)"/>
+    <ellipse cx="8" cy="8" rx="5" ry="2" fill="url(#textGradient)"/>
+  </g>
+  
+  <!-- AJA Text -->
+  <text x="40" y="65" text-anchor="middle" font-family="Georgia, serif" font-size="12" font-weight="bold" fill="url(#textGradient)">AJA</text>
+</svg> 
