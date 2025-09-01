@@ -40,9 +40,8 @@ import { SettingsService } from '../services/settings.service';
     <div class="pc-layout" [class.theme-dark]="isDarkTheme" [class.theme-light]="!isDarkTheme">
       <!-- Mobile Overlay -->
       <div class="mobile-overlay" *ngIf="isMobileMenuOpen" (click)="toggleMobileMenu()"></div>
-      
       <!-- Sidebar -->
-      <nav class="pc-sidebar" [class.navbar-collapsed]="isCollapsed" [class.mobile-open]="isMobileMenuOpen">
+      <nav class="pc-sidebar enhanced-sidebar" [class.navbar-collapsed]="isCollapsed" [class.mobile-open]="isMobileMenuOpen">
         <div class="m-header">
           <a class="b-brand" routerLink="/dashboard" (click)="closeMobileMenu()">
             <div class="logo-wrapper">
@@ -53,31 +52,31 @@ import { SettingsService } from '../services/settings.service';
               <div class="brand-subtitle">Law Offices</div>
             </div>
           </a>
-          <button mat-icon-button 
-                  class="collapse-toggle desktop-menu-toggle"
-                  (click)="toggleCollapse()"
-                  [matTooltip]="isCollapsed ? 'Expand' : 'Collapse'">
-            <mat-icon>{{ isCollapsed ? 'menu' : 'menu_open' }}</mat-icon>
-          </button>
+          <!-- collapse toggle removed (was duplicate/hamburger) -->
           <button mat-icon-button 
                   class="mobile-close-btn mobile-menu-toggle"
                   (click)="toggleMobileMenu()"
                   *ngIf="isMobileMenuOpen">
             <mat-icon>close</mat-icon>
           </button>
+          <!-- notifications removed from top bar -->
+          <!-- <button mat-icon-button class="notif-bell" aria-label="Notifications">
+            <mat-icon>notifications</mat-icon>
+            <span class="notif-count">0</span>
+          </button> -->
         </div>
 
         <div class="navbar-content">
           <!-- Profile card -->
-          <div class="profile-card" *ngIf="currentUser && !isCollapsed">
-            <div class="avatar">{{ getUserInitials() }}</div>
+          <div class="profile-card enhanced-profile-card" *ngIf="currentUser && !isCollapsed">
+            <div class="avatar enhanced-avatar">{{ getUserInitials() }}</div>
             <div class="profile-meta">
               <div class="profile-name">{{ getFullName() }}</div>
               <div class="profile-role">{{ getRoleDisplayName() }}</div>
             </div>
           </div>
 
-          <ul class="pc-navbar">
+          <ul class="pc-navbar enhanced-navbar">
 
             <!-- Core Navigation -->
             <li class="pc-item pc-caption">
@@ -211,46 +210,28 @@ import { SettingsService } from '../services/settings.service';
       <!-- Header -->
       <header class="pc-header">
         <div class="header-wrapper">
-          <div class="header-left">
-            <div class="pc-h-item">
-              <button mat-icon-button class="pc-head-link mobile-menu-toggle" (click)="toggleMobileMenu()">
+          <div class="header-inner">
+            <div class="header-left">
+              <button mat-icon-button class="pc-head-link desktop-menu-toggle" (click)="toggleCollapse()" aria-label="Toggle navigation">
                 <mat-icon>menu</mat-icon>
               </button>
-              <button mat-icon-button class="pc-head-link desktop-menu-toggle" (click)="toggleCollapse()">
-                <mat-icon>menu</mat-icon>
-              </button>
+              <div class="page-title">AJA</div>
             </div>
-            <h1 class="page-title" [matTooltip]="router.url">{{ routeTitle }}</h1>
-          </div>
 
-          <div class="header-right">
-            <!-- User Menu -->
-            <div class="pc-h-item">
+            <div class="header-right">
+              <!-- simplified user control: just name + chevron -->
               <button mat-button class="pc-head-link user-name" [matMenuTriggerFor]="userMenu" matTooltip="User Menu">
-                <div class="user-info" *ngIf="currentUser">
-                  <span class="user-name">{{ getFullName() }}</span>
-                </div>
+                <span class="user-name">{{ getFullName() }}</span>
                 <mat-icon class="chevron-down">expand_more</mat-icon>
               </button>
-              <mat-menu #userMenu="matMenu" class="pc-h-dropdown">
-                <div class="dropdown-header">
-                  <h6>{{ getFullName() }}</h6>
-                  <span>{{ getRoleDisplayName() }}</span>
-                </div>
-                <mat-divider></mat-divider>
-                <button mat-menu-item [routerLink]="getProfileRoute()">
-                  <mat-icon>person</mat-icon>
-                  <span>Profile</span>
-                </button>
-                <button mat-menu-item (click)="logout()">
-                  <mat-icon>logout</mat-icon>
-                  <span>Logout</span>
-                </button>
-              </mat-menu>
-            </div>
 
-            <!-- Theme Toggle -->
-            <div class="pc-h-item">
+              <mat-menu #userMenu="matMenu" class="pc-h-dropdown">
+                <div class="dropdown-header"><h6>{{ getFullName() }}</h6><span>{{ getRoleDisplayName() }}</span></div>
+                <mat-divider></mat-divider>
+                <button mat-menu-item [routerLink]="getProfileRoute()"><mat-icon>person</mat-icon><span>Profile</span></button>
+                <button mat-menu-item (click)="logout()"><mat-icon>logout</mat-icon><span>Logout</span></button>
+              </mat-menu>
+
               <button mat-icon-button class="pc-head-link" (click)="toggleTheme()" [matTooltip]="isDarkTheme ? 'Switch to light theme' : 'Switch to dark theme'">
                 <mat-icon>{{ isDarkTheme ? 'light_mode' : 'dark_mode' }}</mat-icon>
               </button>
@@ -288,7 +269,8 @@ import { SettingsService } from '../services/settings.service';
     .pc-layout {
       display: flex;
       min-height: 100vh;
-    }
+  }
+    
 
     /* THEME TOKENS */
     .theme-dark { 
@@ -323,16 +305,18 @@ import { SettingsService } from '../services/settings.service';
 
     /* Sidebar Styles */
     .pc-sidebar {
-      background: linear-gradient(180deg, var(--side-bg-1) 0%, var(--side-bg-2) 100%);
-      box-shadow: 0 10px 30px rgba(2, 6, 23, 0.35);
-      width: 280px;
-      position: fixed;
-      top: 0;
-      bottom: 0;
-      z-index: 1026;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      overflow-y: auto;
-      border-right: 1px solid var(--divider);
+  background: linear-gradient(135deg, rgba(30,41,59,0.85) 0%, rgba(51,65,85,0.85) 100%);
+  box-shadow: 0 8px 32px 0 rgba(31, 41, 55, 0.18);
+  width: 260px;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  z-index: 1026;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0;
+  backdrop-filter: blur(18px) saturate(180%);
 
       &.navbar-collapsed {
         width: 72px;
@@ -414,15 +398,15 @@ import { SettingsService } from '../services/settings.service';
     }
 
     .collapse-toggle {
-      color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
+      color: #38bdf8;
+      background: #0f172a;
+      border-radius: 50%;
       transition: all 0.2s ease;
-
+      box-shadow: 0 2px 8px rgba(56,189,248,0.08);
       &:hover {
-        background: rgba(255, 255, 255, 0.1);
-        color: var(--text-strong);
-        transform: scale(1.05);
+        background: #334155;
+        color: #38bdf8;
+  transform: none;
       }
     }
 
@@ -431,48 +415,49 @@ import { SettingsService } from '../services/settings.service';
     }
 
     .profile-card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 16px 16px 20px 16px;
-      padding: 16px;
-      border-radius: 12px;
-      background: var(--profile-bg);
-      border: 1px solid var(--profile-border);
-      backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 18px 18px 22px 18px;
+  padding: 16px 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #334155 0%, #18181b 100%);
+  border: 1px solid #334155;
+  box-shadow: 0 2px 12px rgba(56,189,248,0.07);
+  backdrop-filter: blur(6px);
     }
 
     .profile-card .avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-      display: grid;
-      place-items: center;
-      font-weight: 700;
-      color: #fff;
-      font-size: 14px;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: #fff;
+  font-size: 18px;
+  box-shadow: 0 4px 16px rgba(56,189,248,0.18);
     }
 
     .profile-meta {
-      display: flex;
-      flex-direction: column;
-      color: var(--text-strong);
+  display: flex;
+  flex-direction: column;
+  color: #f1f5f9;
     }
 
     .profile-name { 
-      font-size: 14px; 
-      font-weight: 600; 
-      margin-bottom: 2px;
+  font-size: 15px; 
+  font-weight: 600; 
+  margin-bottom: 2px;
     }
     
     .profile-role { 
-      font-size: 11px; 
-      color: var(--text-soft); 
-      text-transform: uppercase; 
-      letter-spacing: .3px; 
-      font-weight: 500;
+  font-size: 11px; 
+  color: #38bdf8; 
+  text-transform: uppercase; 
+  letter-spacing: .3px; 
+  font-weight: 500;
     }
 
     .pc-navbar {
@@ -486,98 +471,93 @@ import { SettingsService } from '../services/settings.service';
     }
 
     .pc-caption {
-      color: var(--text-soft);
-      padding: 24px 20px 12px 20px;
-      font-size: 11px;
+      color: #38bdf8;
+      padding: 18px 16px 8px 16px;
+      font-size: 10px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px;
       position: relative;
-
       label {
         display: block;
-        margin-bottom: 4px;
-        color: var(--text-muted);
+        margin-bottom: 2px;
+        color: #38bdf8;
         font-weight: 600;
       }
-
       span {
-        font-size: 10px;
-        color: var(--text-soft);
+        font-size: 9px;
+        color: #94a3b8;
         text-transform: capitalize;
         font-weight: 400;
       }
-
       &::after {
         content: '';
         position: absolute;
-        left: 20px;
-        right: 20px;
-        bottom: 8px;
+        left: 0;
+        right: 0;
+        bottom: -2px;
         height: 1px;
-        background: linear-gradient(90deg, transparent 0%, var(--divider) 50%, transparent 100%);
+        background: #334155;
       }
     }
 
     .pc-link {
       display: flex;
       align-items: center;
-      padding: 14px 20px;
-      color: var(--text-muted);
+      padding: 14px 18px;
+      color: #f1f5f9;
       text-decoration: none;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 10px;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 500;
       position: relative;
-      margin: 2px 12px;
-
+      margin: 4px 10px;
+      letter-spacing: 0.08px;
       &:hover {
-        background: var(--link-hover);
-        color: var(--text-strong);
-        transform: translateX(4px);
+        background: linear-gradient(90deg, #38bdf8 0%, #6366f1 100%);
+        color: #fff;
+        transform: none;
+        box-shadow: 0 2px 8px rgba(56,189,248,0.10);
       }
-
       &.active {
-        background: var(--active-bg);
-        color: var(--text-strong);
-        box-shadow: inset 0 0 0 1px var(--active-stroke);
-        font-weight: 600;
-
+        background: linear-gradient(90deg, #6366f1 0%, #38bdf8 100%);
+        color: #fff;
+        box-shadow: 0 2px 16px rgba(56,189,248,0.18);
+        font-weight: 700;
         .pc-micon {
-          color: #3b82f6;
+          color: #fff;
+          text-shadow: 0 0 8px #38bdf8;
         }
       }
-
       /* Accent bar */
       &::before {
         content: '';
         position: absolute;
-        left: 8px;
+        left: 0;
         top: 50%;
-        transform: translateY(-50%);
-        width: 3px;
+  transform: translateY(-50%);
+        width: 4px;
         height: 0px;
-        background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%);
+        background: linear-gradient(180deg, #38bdf8 0%, #6366f1 100%);
         border-radius: 2px;
         transition: height .3s cubic-bezier(0.4, 0, 0.2, 1);
         opacity: .9;
       }
-      
       &.active::before { 
         height: 70%; 
       }
     }
 
     .pc-micon {
-      margin-right: 12px;
-      width: 20px;
-      height: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      transition: color 0.2s ease;
+  margin-right: 12px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+  transition: color 0.2s ease;
     }
 
     .pc-mtext {
@@ -586,134 +566,113 @@ import { SettingsService } from '../services/settings.service';
     }
 
     .logout-item {
-      margin-top: 20px;
-      border-top: 1px solid var(--divider);
+      margin-top: 22px;
+      border-top: 1px solid #334155;
       padding-top: 16px;
-
       .pc-link {
-        color: #ef4444;
-        
+        color: #f87171;
         &:hover {
-          background: rgba(239, 68, 68, 0.1);
-          color: #fca5a5;
+          background: linear-gradient(90deg, #f87171 0%, #ef4444 100%);
+          color: #fff;
         }
-
         .pc-micon {
-          color: #ef4444;
+          color: #f87171;
         }
       }
     }
 
     /* Header Styles */
     .pc-header {
-      background: var(--header-bg);
-      backdrop-filter: saturate(150%) blur(20px);
-      color: #0f172a;
+      background: #f8fafc;
+      color: #222;
       min-height: 64px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      box-shadow: 0 1px 6px rgba(31,41,55,0.06);
       position: fixed;
-      left: 280px;
+      left: 260px;
       right: 0;
       z-index: 1025;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      border-bottom: 1px solid rgba(15,23,42,0.06);
-
-      .navbar-collapsed + & {
-        left: 72px;
-      }
+      border-bottom: 1px solid #e6eef6;
     }
 
+    /* Make header-wrapper align to the main content area (to the right of the sidebar) */
     .header-wrapper {
+      width: 100%;
+      display: block;
+      background: transparent;
+    }
+    .header-inner {
+      width: 100%;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 24px;
       height: 64px;
+      padding: 0 24px;
+      background: #ffffff;
+      box-shadow: 0 2px 10px rgba(16,24,40,0.04);
     }
 
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .header-left { display:flex; align-items:center; gap:12px; }
+    .page-title { font-size:16px; font-weight:700; margin:0; color:#0f172a; }
+    .avatar-mini {
+      width:32px;
+      height:32px;
+      border-radius:6px;
+      background: linear-gradient(135deg,#6366f1,#06b6d4);
+      color: #fff;
+      display:grid;
+      place-items:center;
+      font-weight:700;
+      margin-right:8px;
+      font-size:13px;
+    }
+  .header-right { display: flex !important; align-items:center; gap:12px; }
+  .pc-head-link.user-name { padding: 6px 10px; border-radius: 8px; color:#0f172a; display:flex; align-items:center; gap:8px; }
+  .pc-head-link.user-name:hover { background: rgba(15,23,42,0.03); }
+  .chevron-down { margin-left:6px; font-size:20px; }
+  .pc-h-item .pc-head-link.mat-icon-button { width:40px; height:40px; }
+  .pc-h-item .pc-head-link.mat-icon-button mat-icon { font-size:20px; }
+  /* notifications removed from top bar; keep header compact */
+  /* .notif-bell { position: relative; } */
+  /* .notif-bell mat-icon { font-size:20px; } */
+  /* .notif-count { position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size:11px; width:18px; height:18px; border-radius:50%; display:grid; place-items:center; } */
+
+    /* Remove hover zoom/scale effects globally for interactive elements inside navigation */
+    .pc-link, .collapse-toggle, .pc-item, .profile-card, .pc-head-link, .mobile-close-btn, .mobile-menu-toggle {
+      transition: background-color .15s ease, color .15s ease, box-shadow .15s ease;
+    }
+    /* Disable transform/scale on hover to prevent zooming */
+    .pc-link:hover, .collapse-toggle:hover, .profile-card:hover, .pc-item:hover, .pc-head-link:hover, .mobile-close-btn:hover {
+      transform: none !important;
+      background: rgba(0,0,0,0.03);
+      box-shadow: none;
     }
 
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .page-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #0f172a;
-      margin: 0 8px 0 8px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .pc-h-item {
-      display: flex;
-      align-items: center;
-    }
-
-    .pc-head-link {
-      color: #0f172a;
-      padding: 8px;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      height: 40px;
-      min-width: 40px;
-      background: transparent;
-
-      &:hover {
-        background: rgba(15,23,42,0.04);
-        color: #334155;
-        transform: translateY(-1px);
-      }
-
-      &.user-name {
-        padding: 8px 16px;
-        gap: 12px;
-        min-width: auto;
-        border: 1px solid #e2e8f0;
-        background: #ffffff;
-        
-        &:hover {
-          border-color: #cbd5e1;
-          background: #f8fafc;
-        }
-      }
-    }
+  /* Adjust main content to match header height and align with sidebar */
+  .pc-main { margin-top: 64px; margin-left: 260px; }
 
     .user-info {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
     }
 
     .user-name {
-      font-size: 14px;
-      font-weight: 500;
-      color: #0f172a;
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+  font-size: 15px;
+  font-weight: 600;
+  color: #38bdf8;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
     }
 
+  .header-right .user-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; display: inline-block; color: #0f172a; font-weight: 600; }
+  .header-right .avatar-mini { margin-right: 8px; }
     .chevron-down {
-      font-size: 18px;
-      margin-left: 4px;
-      transition: transform 0.2s ease;
+  font-size: 20px;
+  margin-left: 6px;
+  transition: transform 0.2s ease;
     }
 
     .pc-head-link:hover .chevron-down {
@@ -721,37 +680,35 @@ import { SettingsService } from '../services/settings.service';
     }
 
     .pc-h-dropdown {
-      min-width: 220px;
-      padding: 8px 0;
-      border-radius: 12px;
-      box-shadow: 0 20px 25px rgba(0,0,0,0.1), 0 10px 10px rgba(0,0,0,0.04);
-      border: 1px solid #e2e8f0;
-      background: #ffffff;
+  min-width: 220px;
+  padding: 8px 0;
+  border-radius: 14px;
+  box-shadow: 0 20px 25px rgba(56,189,248,0.10), 0 10px 10px rgba(99,102,241,0.04);
+  border: 1px solid #334155;
+  background: #18181b;
     }
 
     .dropdown-header {
       padding: 16px;
-      border-bottom: 1px solid #e2e8f0;
+      border-bottom: 1px solid #334155;
       margin-bottom: 8px;
-      background: #f8fafc;
-
+      background: #1e293b;
       h6 {
         margin: 0 0 4px 0;
-        font-size: 14px;
-        font-weight: 600;
-        color: #0f172a;
+        font-size: 15px;
+        font-weight: 700;
+        color: #38bdf8;
       }
-
       span {
         font-size: 12px;
-        color: #64748b;
+        color: #94a3b8;
       }
     }
 
     /* Main Content */
     .pc-main {
       flex: 1;
-      margin-left: 280px;
+      margin-left: 260px;
       margin-top: 64px;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       min-height: calc(100vh - 64px);
@@ -833,7 +790,7 @@ import { SettingsService } from '../services/settings.service';
     @media (max-width: 768px) {
       .pc-header {
         .header-wrapper {
-          padding: 0 16px;
+    padding: 0 24px;
         }
       }
 
