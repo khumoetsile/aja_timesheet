@@ -37,6 +37,16 @@ export const routes: Routes = [
         loadComponent: () => import('./admin/admin-tasks.component').then(m => m.AdminTasksComponent),
         data: { title: 'Department Tasks', roles: ['ADMIN'] }
       },
+      { 
+        path: 'admin/departments', 
+        loadComponent: () => import('./admin/components/departments-management.component').then(m => m.DepartmentsManagementComponent),
+        data: { title: 'Departments Management', roles: ['ADMIN'] }
+      },
+      { 
+        path: 'admin/users-management', 
+        loadComponent: () => import('./admin/components/users-management.component').then(m => m.UsersManagementComponent),
+        data: { title: 'Users Management', roles: ['ADMIN'] }
+      },
           {
       path: 'admin/compliance',
       loadComponent: () => import('./admin/components/timesheet-compliance-dashboard.component').then(m => m.TimesheetComplianceDashboardComponent),

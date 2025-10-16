@@ -45,7 +45,7 @@ import { SettingsService } from '../services/settings.service';
         <div class="m-header">
           <a class="b-brand" routerLink="/dashboard" (click)="closeMobileMenu()">
             <div class="logo-wrapper">
-              <img src="assets/aja-logo.svg" alt="AJA" class="logo logo-lg">
+              <img src="assets/logo.jpeg" alt="AJA Law Offices" class="logo logo-lg">
             </div>
             <div class="brand-text" *ngIf="!isCollapsed">
               <div class="brand-name">AJA</div>
@@ -149,6 +149,22 @@ import { SettingsService } from '../services/settings.service';
               <a routerLink="/admin/tasks" class="pc-link" (click)="closeMobileMenu()" [matTooltip]="isCollapsed ? 'Tasks' : ''" matTooltipPosition="right">
                 <mat-icon class="pc-micon">task</mat-icon>
                 <span class="pc-mtext" *ngIf="!isCollapsed">Tasks</span>
+              </a>
+            </li>
+
+            <!-- Departments Management -->
+            <li class="pc-item" [class.active]="isActiveRoute('/admin/departments')" *ngIf="isAdmin">
+              <a routerLink="/admin/departments" class="pc-link" (click)="closeMobileMenu()" [matTooltip]="isCollapsed ? 'Departments' : ''" matTooltipPosition="right">
+                <mat-icon class="pc-micon">business</mat-icon>
+                <span class="pc-mtext" *ngIf="!isCollapsed">Departments</span>
+              </a>
+            </li>
+
+            <!-- Users Management -->
+            <li class="pc-item" [class.active]="isActiveRoute('/admin/users-management')" *ngIf="isAdmin">
+              <a routerLink="/admin/users-management" class="pc-link" (click)="closeMobileMenu()" [matTooltip]="isCollapsed ? 'Users' : ''" matTooltipPosition="right">
+                <mat-icon class="pc-micon">group_add</mat-icon>
+                <span class="pc-mtext" *ngIf="!isCollapsed">Users</span>
               </a>
             </li>
 
@@ -359,19 +375,20 @@ import { SettingsService } from '../services/settings.service';
     }
 
     .logo-wrapper {
-      width: 44px;
-      height: 44px;
+      width: 60px;
+      height: 60px;
       display: flex;
       align-items: center;
       justify-content: center;
       background: linear-gradient(135deg, rgba(59,130,246,0.2) 0%, rgba(99,102,241,0.15) 100%);
-      border-radius: 12px;
+      border-radius: 15px;
       border: 1px solid rgba(59,130,246,0.2);
     }
 
     .logo {
-      width: 24px;
-      height: 24px;
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
     }
 
     .brand-text { 
@@ -939,6 +956,9 @@ export class NavigationComponent implements OnInit {
       '/admin/reports': 'Reports',
       '/admin/analytics': 'Analytics Dashboard',
       '/admin/users': 'User Management',
+      '/admin/tasks': 'Department Tasks',
+      '/admin/departments': 'Departments Management',
+      '/admin/users-management': 'Users Management',
       '/dashboard': 'Dashboard',
       '/timesheet': 'My Timesheet',
       '/settings': 'Settings',

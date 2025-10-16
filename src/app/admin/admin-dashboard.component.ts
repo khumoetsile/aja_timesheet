@@ -1042,9 +1042,14 @@ export class AdminDashboardComponent implements OnInit {
         const entries = response.entries || [];
         
         if (entries.length === 0) {
-          console.log('📊 No timesheet entries found, using sample data for demonstration');
-          this.loadSampleData();
-          this.snackBar.open('No timesheet data found. Using sample data for demonstration.', 'Close', { duration: 5000 });
+          console.log('📊 No timesheet entries found');
+          this.entries = [];
+          this.calculateMetrics([]);
+          this.calculateDepartmentStats([]);
+          this.calculateUserStats([]);
+          this.extractDepartments([]);
+          this.updateCharts([]);
+          this.snackBar.open('No timesheet data found. Start by creating timesheet entries.', 'Close', { duration: 5000 });
         } else {
           console.log('📊 Processing', entries.length, 'timesheet entries');
           this.entries = entries;
@@ -1058,8 +1063,13 @@ export class AdminDashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('❌ Error loading admin dashboard data:', error);
-        this.loadSampleData();
-        this.snackBar.open('Error loading data. Using sample data for demonstration.', 'Close', { duration: 5000 });
+        this.entries = [];
+        this.calculateMetrics([]);
+        this.calculateDepartmentStats([]);
+        this.calculateUserStats([]);
+        this.extractDepartments([]);
+        this.updateCharts([]);
+        this.snackBar.open('Error loading data. Please try again.', 'Close', { duration: 5000 });
       }
     });
   }

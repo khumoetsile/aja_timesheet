@@ -32,14 +32,14 @@ import { AuthService } from '../services/auth.service';
         <!-- AJA Logo and Branding -->
         <div class="branding-section">
           <div class="logo-container">
-            <div class="aja-logo">
-              <span class="aja-text">AJA</span>
-            </div>
+            <img src="assets/logo.jpeg" alt="AJA Law Offices" class="company-logo">
           </div>
           <div class="brand-text">
             <div class="law-offices">LAW OFFICES OF</div>
             <div class="main-name">AKHEEL JINABHAI</div>
             <div class="associates">& ASSOCIATES</div>
+            <div class="association">IN ASSOCIATION WITH</div>
+            <div class="mckee">MCKEE COMMERCIAL LAW</div>
           </div>
           <div class="tagline">DRIVING SUCCESS THROUGH LEGAL STRATEGY</div>
         </div>
@@ -87,19 +87,6 @@ import { AuthService } from '../services/auth.service';
             <p>Don't have an account? <a href="#" class="signup-link">Contact administrator</a></p>
           </div>
 
-          <!-- Demo Accounts Info -->
-          <div class="demo-accounts">
-            <h4>Demo Accounts</h4>
-            <div class="demo-account" (click)="fillDemoAccount('admin@aja.com', 'admin123')">
-              <strong>Admin:</strong> admin&#64;aja.com / admin123
-            </div>
-            <div class="demo-account" (click)="fillDemoAccount('supervisor@aja.com', 'admin123')">
-              <strong>Supervisor:</strong> supervisor&#64;aja.com / admin123
-            </div>
-            <div class="demo-account" (click)="fillDemoAccount('staff@aja.com', 'admin123')">
-              <strong>Staff:</strong> staff&#64;aja.com / admin123
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -110,212 +97,333 @@ import { AuthService } from '../services/auth.service';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       padding: 20px;
+      position: relative;
+    }
+
+    .login-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="10" cy="60" r="0.5" fill="rgba(255,255,255,0.05)"/><circle cx="90" cy="40" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+      opacity: 0.3;
     }
 
     .login-card {
       background: white;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 25px rgba(0, 0, 0, 0.1);
       overflow: hidden;
       width: 100%;
-      max-width: 900px;
+      max-width: 1000px;
       display: flex;
-      min-height: 600px;
+      min-height: 650px;
+      position: relative;
+      z-index: 1;
     }
 
     .branding-section {
       flex: 1;
-      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1a1a1a 100%);
       color: white;
-      padding: 40px;
+      padding: 50px 40px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .branding-section::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(180deg); }
     }
 
     .logo-container {
-      margin-bottom: 30px;
+      margin-bottom: 40px;
+      position: relative;
+      z-index: 2;
     }
 
-    .aja-logo {
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-      border: 2px solid #fff;
+    .company-logo {
+      width: 200px;
+      height: 200px;
+      object-fit: contain;
+      border-radius: 25px;
+      margin: 0 auto 30px;
+      display: block;
+      background: white;
+      padding: 25px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .aja-text {
-      font-family: 'Georgia', serif;
-      font-size: 24px;
-      font-weight: normal;
-      color: white;
-      letter-spacing: 2px;
+    .company-logo:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.2);
     }
 
     .brand-text {
-      margin-bottom: 20px;
+      margin-bottom: 30px;
+      position: relative;
+      z-index: 2;
     }
 
     .law-offices {
-      font-size: 12px;
-      color: #ccc;
-      margin-bottom: 5px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 8px;
       font-weight: 300;
+      letter-spacing: 2px;
+      text-transform: uppercase;
     }
 
     .main-name {
-      font-size: 24px;
-      font-weight: normal;
-      margin-bottom: 5px;
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
       font-family: 'Georgia', serif;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      letter-spacing: 1px;
     }
 
     .associates {
-      font-size: 16px;
-      font-weight: normal;
+      font-size: 20px;
+      font-weight: 400;
       font-family: 'Georgia', serif;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 20px;
+    }
+
+    .association {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 20px;
+      margin-bottom: 8px;
+      font-weight: 300;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .mckee {
+      font-size: 22px;
+      font-weight: 600;
+      font-family: 'Georgia', serif;
+      color: #fff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      letter-spacing: 1px;
     }
 
     .tagline {
-      font-size: 14px;
-      color: #ccc;
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.8);
       font-weight: 300;
-      margin-top: 20px;
-      padding: 10px 20px;
+      margin-top: 30px;
+      padding: 15px 25px;
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
+      border-radius: 25px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      position: relative;
+      z-index: 2;
+      letter-spacing: 1px;
     }
 
     .login-form {
       flex: 1;
-      padding: 40px;
+      padding: 60px 50px;
       display: flex;
       flex-direction: column;
       justify-content: center;
+      background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+      position: relative;
+    }
+
+    .login-form::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(102, 126, 234, 0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
+      opacity: 0.5;
     }
 
     .login-form h2 {
-      margin: 0 0 10px 0;
-      color: #333;
-      font-size: 28px;
-      font-weight: 600;
+      margin: 0 0 15px 0;
+      color: #1a202c;
+      font-size: 32px;
+      font-weight: 700;
+      position: relative;
+      z-index: 1;
     }
 
     .login-subtitle {
-      color: #666;
-      margin-bottom: 30px;
-      font-size: 16px;
+      color: #64748b;
+      margin-bottom: 40px;
+      font-size: 18px;
+      font-weight: 400;
+      position: relative;
+      z-index: 1;
     }
 
     .full-width {
       width: 100%;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .full-width ::ng-deep .mat-form-field {
+      font-size: 16px;
+    }
+
+    .full-width ::ng-deep .mat-form-field-outline {
+      color: #e2e8f0;
+    }
+
+    .full-width ::ng-deep .mat-form-field-outline-thick {
+      color: #667eea;
+    }
+
+    .full-width ::ng-deep .mat-form-field-label {
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .full-width ::ng-deep .mat-input-element {
+      color: #1a202c;
+      font-weight: 500;
     }
 
     .form-actions {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 30px;
+      margin-bottom: 35px;
+      position: relative;
+      z-index: 1;
     }
 
     .forgot-password {
-      color: #1976d2;
+      color: #667eea;
       text-decoration: none;
-      font-size: 14px;
+      font-size: 15px;
+      font-weight: 500;
+      transition: color 0.3s ease;
     }
 
     .forgot-password:hover {
+      color: #5a67d8;
       text-decoration: underline;
     }
 
     .login-button {
       width: 100%;
-      height: 48px;
-      font-size: 16px;
-      font-weight: 500;
-      margin-bottom: 20px;
+      height: 55px;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 25px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .login-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+    }
+
+    .login-button:active {
+      transform: translateY(0);
     }
 
     .login-footer {
       text-align: center;
-      margin-top: 20px;
+      margin-top: 30px;
+      position: relative;
+      z-index: 1;
     }
 
     .login-footer p {
-      color: #666;
-      font-size: 14px;
+      color: #64748b;
+      font-size: 16px;
+      font-weight: 400;
     }
 
     .signup-link {
-      color: #1976d2;
+      color: #667eea;
       text-decoration: none;
-      font-weight: 500;
+      font-weight: 600;
+      transition: color 0.3s ease;
     }
 
     .signup-link:hover {
+      color: #5a67d8;
       text-decoration: underline;
     }
 
-    .demo-accounts {
-      margin-top: 30px;
-      padding: 20px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      border-left: 4px solid #1976d2;
-    }
-
-    .demo-accounts h4 {
-      margin: 0 0 15px 0;
-      color: #333;
-      font-size: 16px;
-    }
-
-    .demo-account {
-      margin-bottom: 8px;
-      font-size: 14px;
-      color: #666;
-      cursor: pointer;
-      padding: 8px 12px;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-    }
-
-    .demo-account:hover {
-      background: #e3f2fd;
-      color: #1976d2;
-      transform: translateX(4px);
-    }
-
-    .demo-account:active {
-      transform: translateX(2px);
-    }
-
-    .demo-account strong {
-      color: #333;
-    }
 
     @media (max-width: 768px) {
+      .login-container {
+        padding: 10px;
+      }
+
       .login-card {
         flex-direction: column;
-        max-width: 400px;
+        max-width: 450px;
+        min-height: auto;
+        border-radius: 15px;
       }
 
       .branding-section {
-        padding: 30px 20px;
+        padding: 40px 30px;
+        order: 2;
       }
 
       .login-form {
-        padding: 30px 20px;
+        padding: 40px 30px;
+        order: 1;
+      }
+
+      .company-logo {
+        width: 150px;
+        height: 150px;
+      }
+
+      .main-name {
+        font-size: 24px;
+      }
+
+      .associates {
+        font-size: 16px;
+      }
+
+      .mckee {
+        font-size: 18px;
       }
     }
   `]
@@ -415,13 +523,4 @@ export class LoginComponent {
     }, 100);
   }
 
-  fillDemoAccount(email: string, password: string) {
-    this.loginForm.get('email')?.setValue(email);
-    this.loginForm.get('password')?.setValue(password);
-    this.snackBar.open('Demo account filled!', 'Close', {
-      duration: 3000,
-      horizontalPosition: 'center',
-      verticalPosition: 'top'
-    });
-  }
 } 

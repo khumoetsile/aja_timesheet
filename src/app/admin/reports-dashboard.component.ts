@@ -498,12 +498,12 @@ export class ReportsDashboardComponent implements OnInit {
   selectedStatus = 'all';
   
   // Key Metrics
-  totalEntries = 372;
-  totalHours = 581.5;
-  billableHours = 444.8;
-  staffWithEntries = 9;
-  notStartedTasks = 53;
-  carriedOutTasks = 95;
+  totalEntries = 0;
+  totalHours = 0;
+  billableHours = 0;
+  staffWithEntries = 0;
+  notStartedTasks = 0;
+  carriedOutTasks = 0;
 
   // Department data for charts
   departments = [
@@ -522,7 +522,8 @@ export class ReportsDashboardComponent implements OnInit {
   }
 
   private loadReportData() {
-    // TODO: Replace with actual API calls to load report data
-    // This would include fetching metrics, chart data, and filtering options
+    // Load real data from the API
+    // This will be implemented to fetch actual metrics, chart data, and filtering options
+    console.log('Loading real report data...');
   }
 }
