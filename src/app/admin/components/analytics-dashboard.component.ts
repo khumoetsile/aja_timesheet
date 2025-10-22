@@ -494,6 +494,9 @@ export class AnalyticsDashboardComponent implements OnInit, OnDestroy, AfterView
   private setupDataStreams(): void {
     this.analytics$.pipe(takeUntil(this.destroy$)).subscribe(data => {
       console.log('📊 Analytics data updated:', data);
+      console.log('  → Compliance:', data?.complianceRate);
+      console.log('  → Utilization:', data?.utilizationRate);
+      console.log('  → Total Hours:', data?.totalHours);
       this.analytics = data;
     });
 
@@ -559,7 +562,10 @@ export class AnalyticsDashboardComponent implements OnInit, OnDestroy, AfterView
     this.isLoading = true;
     const dateRange = this.getDateRange();
 
-    console.log('🔄 Refreshing data for date range:', dateRange);
+    console.log('🔄 Refreshing analytics data...');
+    console.log('  → Selected Range:', this.selectedDateRange);
+    console.log('  → Start Date:', dateRange.start.toISOString().slice(0, 10));
+    console.log('  → End Date:', dateRange.end.toISOString().slice(0, 10));
 
     // Load data with fallback strategy - if one fails, continue with others
     this.loadDataWithFallback(dateRange);
@@ -596,13 +602,19 @@ export class AnalyticsDashboardComponent implements OnInit, OnDestroy, AfterView
     };
 
     // Load time analytics
+    console.log('  → Loading time analytics...');
     this.analyticsService.getTimeAnalytics(dateRange, filters).subscribe({
       next: (data) => {
         console.log('✅ Time analytics loaded:', data);
+        console.log('   Compliance:', data.complianceRate, '%');
+        console.log('   Utilization:', data.utilizationRate, '%');
+        console.log('   Total Hours:', data.totalHours);
+        console.log('   Total Entries:', data.totalEntries);
         handleRequestComplete(true);
       },
       error: (error) => {
         console.error('❌ Error loading time analytics:', error);
+        console.error('   Error details:', error.message, error.status);
         // Don't retry, just continue with other requests
         handleRequestComplete(false);
       }

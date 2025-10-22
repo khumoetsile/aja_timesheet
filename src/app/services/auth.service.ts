@@ -137,11 +137,23 @@ export class AuthService {
     });
   }
 
+  updateUser(userId: string, updates: Partial<User>): Observable<any> {
+    return this.http.put(`${this.apiUrl}/auth/users/${userId}`, updates, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
   changePassword(currentPassword: string, newPassword: string): Observable<any> {
     return this.http.put(`${this.apiUrl}/auth/change-password`, {
       currentPassword,
       newPassword
     }, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  resetUserPassword(userId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/auth/users/${userId}/reset-password`, {}, {
       headers: this.getAuthHeaders()
     });
   }

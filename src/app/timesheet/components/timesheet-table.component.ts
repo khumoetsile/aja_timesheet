@@ -125,7 +125,7 @@ import { AuthService } from '../../services/auth.service';
           <mat-select [(value)]="selectedStatus" (selectionChange)="applyStatusFilter()">
             <mat-option value="">All Statuses</mat-option>
             <mat-option value="Completed">Completed</mat-option>
-            <mat-option value="CarriedOut">Carried Out</mat-option>
+            <mat-option value="CarriedOut">Ongoing</mat-option>
             <mat-option value="NotStarted">Not Started</mat-option>
           </mat-select>
         </mat-form-field>
@@ -257,7 +257,7 @@ import { AuthService } from '../../services/auth.service';
                 'status-completed': element.status === 'Completed',
                 'status-carriedout': element.status === 'CarriedOut',
                 'status-notstarted': element.status === 'NotStarted'
-              }">{{ element.status === 'CarriedOut' ? 'Carried Out' : (element.status === 'NotStarted' ? 'Not Started' : element.status) }}</mat-chip>
+              }">{{ element.status === 'CarriedOut' ? 'Ongoing' : (element.status === 'NotStarted' ? 'Not Started' : element.status) }}</mat-chip>
             </td>
           </ng-container>
 
@@ -269,6 +269,12 @@ import { AuthService } from '../../services/auth.service';
                 {{element.billable ? 'check_circle' : 'cancel'}}
               </mat-icon>
             </td>
+          </ng-container>
+
+          <!-- Created Timestamp Column -->
+          <ng-container matColumnDef="created">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header>Created</th>
+            <td mat-cell *matCellDef="let element">{{element.created_at | date:'medium'}}</td>
           </ng-container>
 
           <!-- Actions Column -->
@@ -703,13 +709,13 @@ import { AuthService } from '../../services/auth.service';
 export class TimesheetTableComponent implements OnInit {
   displayedColumns: string[] = [
     'date', 'client_file_number', 'department', 'task', 'activity', 
-    'priority', 'time', 'total_hours', 'status', 'billable', 'actions'
+    'priority', 'time', 'total_hours', 'status', 'billable', 'created', 'actions'
   ];
   
   // Columns for admin/supervisor view (includes user info)
   adminDisplayedColumns: string[] = [
     'date', 'user', 'client_file_number', 'department', 'task', 'activity', 
-    'priority', 'time', 'total_hours', 'status', 'billable', 'actions'
+    'priority', 'time', 'total_hours', 'status', 'billable', 'created', 'actions'
   ];
   
   dataSource: MatTableDataSource<TimesheetEntry>;
@@ -757,7 +763,7 @@ export class TimesheetTableComponent implements OnInit {
     } else {
       this.displayedColumns = [
         'date', 'client_file_number', 'department', 'task', 'activity', 
-        'priority', 'time', 'total_hours', 'status', 'billable', 'actions'
+        'priority', 'time', 'total_hours', 'status', 'billable', 'created', 'actions'
       ];
     }
   }

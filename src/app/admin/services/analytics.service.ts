@@ -78,11 +78,52 @@ export interface CustomReport {
   nextGeneration: Date | null;
 }
 
+export interface DashboardMetrics {
+  totalEntries: number;
+  totalHours: number;
+  billableHours: number;
+  activeUsers: number;
+  departments: number;
+  averageHoursPerEntry: number;
+  notStartedTasks: number;
+  carriedOutTasks: number;
+  completedTasks: number;
+}
+
+export interface DepartmentStats {
+  department: string;
+  totalEntries: number;
+  totalHours: number;
+  billableHours: number;
+  averageHours: number;
+  completionRate: number;
+  utilization: number;
+}
+
+export interface UserStats {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  totalEntries: number;
+  totalHours: number;
+  billableHours: number;
+  averageHours: number;
+  lastActivity: string;
+  utilization: number;
+}
+
+export interface DashboardMetricsResponse {
+  metrics: DashboardMetrics;
+  departmentStats: DepartmentStats[];
+  userStats: UserStats[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class AnalyticsService {
   private apiUrl = `${environment.apiUrl}/frontend-analytics`;
+  private dashboardApiUrl = `${environment.apiUrl}/analytics`;
   private analyticsSubject = new BehaviorSubject<TimeAnalytics | null>(null);
   private departmentAnalyticsSubject = new BehaviorSubject<DepartmentAnalytics[]>([]);
   private userAnalyticsSubject = new BehaviorSubject<UserAnalytics[]>([]);
@@ -98,13 +139,38 @@ export class AnalyticsService {
     private authService: AuthService
   ) {}
 
+  // Optimized dashboard metrics - NO entries loaded to frontend
+  getDashboardMetrics(filters: any = {}): Observable<DashboardMetricsResponse> {
+    let params = '';
+    const paramsParts: string[] = [];
+    
+    if (filters.department) paramsParts.push(`department=${encodeURIComponent(filters.department)}`);
+    if (filters.userEmail) paramsParts.push(`userEmail=${encodeURIComponent(filters.userEmail)}`);
+    if (filters.status) paramsParts.push(`status=${encodeURIComponent(filters.status)}`);
+    if (filters.dateFrom) paramsParts.push(`dateFrom=${filters.dateFrom}`);
+    if (filters.dateTo) paramsParts.push(`dateTo=${filters.dateTo}`);
+    
+    if (paramsParts.length > 0) {
+      params = '?' + paramsParts.join('&');
+    }
+    
+    console.log('🔍 AnalyticsService.getDashboardMetrics - URL:', `${this.dashboardApiUrl}/dashboard-metrics${params}`);
+    console.log('🔍 AnalyticsService.getDashboardMetrics - Filters:', filters);
+    
+    return this.http.get<DashboardMetricsResponse>(
+      `${this.dashboardApiUrl}/dashboard-metrics${params}`,
+      { headers: this.authService.getAuthHeaders() }
+    );
+  }
+
   /**
    * Get overall time analytics
    */
   getTimeAnalytics(dateRange: { start: Date; end: Date }, filters?: any): Observable<TimeAnalytics> {
     const params = {
-      startDate: dateRange.start.toISOString(),
-      endDate: dateRange.end.toISOString(),
+      // Use local date formatting to avoid timezone issues
+      startDate: `${dateRange.start.getFullYear()}-${String(dateRange.start.getMonth() + 1).padStart(2, '0')}-${String(dateRange.start.getDate()).padStart(2, '0')}`,
+      endDate: `${dateRange.end.getFullYear()}-${String(dateRange.end.getMonth() + 1).padStart(2, '0')}-${String(dateRange.end.getDate()).padStart(2, '0')}`,
       ...filters
     };
 
@@ -124,8 +190,9 @@ export class AnalyticsService {
    */
   getDepartmentAnalytics(dateRange: { start: Date; end: Date }, filters?: any): Observable<DepartmentAnalytics[]> {
     const params = {
-      startDate: dateRange.start.toISOString(),
-      endDate: dateRange.end.toISOString(),
+      // Use local date formatting to avoid timezone issues
+      startDate: `${dateRange.start.getFullYear()}-${String(dateRange.start.getMonth() + 1).padStart(2, '0')}-${String(dateRange.start.getDate()).padStart(2, '0')}`,
+      endDate: `${dateRange.end.getFullYear()}-${String(dateRange.end.getMonth() + 1).padStart(2, '0')}-${String(dateRange.end.getDate()).padStart(2, '0')}`,
       ...filters
     };
 
@@ -145,8 +212,9 @@ export class AnalyticsService {
    */
   getUserAnalytics(dateRange: { start: Date; end: Date }, filters?: any): Observable<UserAnalytics[]> {
     const params = {
-      startDate: dateRange.start.toISOString(),
-      endDate: dateRange.end.toISOString(),
+      // Use local date formatting to avoid timezone issues
+      startDate: `${dateRange.start.getFullYear()}-${String(dateRange.start.getMonth() + 1).padStart(2, '0')}-${String(dateRange.start.getDate()).padStart(2, '0')}`,
+      endDate: `${dateRange.end.getFullYear()}-${String(dateRange.end.getMonth() + 1).padStart(2, '0')}-${String(dateRange.end.getDate()).padStart(2, '0')}`,
       ...filters
     };
 
@@ -166,8 +234,9 @@ export class AnalyticsService {
    */
   getTimeTrends(dateRange: { start: Date; end: Date }, granularity: 'daily' | 'weekly' | 'monthly' = 'daily'): Observable<TimeTrends[]> {
     const params = {
-      startDate: dateRange.start.toISOString(),
-      endDate: dateRange.end.toISOString(),
+      // Use local date formatting to avoid timezone issues
+      startDate: `${dateRange.start.getFullYear()}-${String(dateRange.start.getMonth() + 1).padStart(2, '0')}-${String(dateRange.start.getDate()).padStart(2, '0')}`,
+      endDate: `${dateRange.end.getFullYear()}-${String(dateRange.end.getMonth() + 1).padStart(2, '0')}-${String(dateRange.end.getDate()).padStart(2, '0')}`,
       granularity
     };
 
@@ -268,8 +337,9 @@ export class AnalyticsService {
    */
   getKPIMetrics(dateRange: { start: Date; end: Date }): Observable<any> {
     const params = {
-      startDate: dateRange.start.toISOString(),
-      endDate: dateRange.end.toISOString()
+      // Use local date formatting to avoid timezone issues
+      startDate: `${dateRange.start.getFullYear()}-${String(dateRange.start.getMonth() + 1).padStart(2, '0')}-${String(dateRange.start.getDate()).padStart(2, '0')}`,
+      endDate: `${dateRange.end.getFullYear()}-${String(dateRange.end.getMonth() + 1).padStart(2, '0')}-${String(dateRange.end.getDate()).padStart(2, '0')}`
     };
 
     return this.http.get(`${this.apiUrl}/kpi-metrics`, {

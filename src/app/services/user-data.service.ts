@@ -37,13 +37,13 @@ export class UserDataService {
    * Get user's full name with fallback
    */
   getFullName(user: User | null): string {
-    if (!user) return 'Unknown User';
+    if (!user) return 'AJA User';
     
     const firstName = user.firstName || user.first_name || '';
     const lastName = user.lastName || user.last_name || '';
     
     const fullName = `${firstName} ${lastName}`.trim();
-    return fullName || 'Unknown User';
+    return fullName || (user.email ? user.email.split('@')[0] : 'AJA User');
   }
 
   /**

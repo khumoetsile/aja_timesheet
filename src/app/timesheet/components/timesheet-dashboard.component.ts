@@ -139,7 +139,7 @@ import { AuthService } from '../../services/auth.service';
                   <mat-select [(ngModel)]="selectedStatus" (selectionChange)="applyFilter()">
                     <mat-option value="">All</mat-option>
                     <mat-option value="Completed">Completed</mat-option>
-                    <mat-option value="CarriedOut">Carried Out</mat-option>
+                    <mat-option value="CarriedOut">Ongoing</mat-option>
                     <mat-option value="NotStarted">Not Started</mat-option>
                   </mat-select>
                 </mat-form-field>
@@ -252,7 +252,7 @@ import { AuthService } from '../../services/auth.service';
                 <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
                 <td mat-cell *matCellDef="let element">
                   <mat-chip [class]="'status-' + element.status.toLowerCase()" class="status-chip">
-                    {{element.status === 'CarriedOut' ? 'Carried Out' : element.status === 'NotStarted' ? 'Not Started' : element.status}}
+                    {{element.status === 'CarriedOut' ? 'Ongoing' : element.status === 'NotStarted' ? 'Not Started' : element.status}}
                   </mat-chip>
                 </td>
               </ng-container>

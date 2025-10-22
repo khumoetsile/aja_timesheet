@@ -1,18 +1,19 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSortModule } from '@angular/material/sort';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginatorModule, MatPaginator, PageEvent } from '@angular/material/paginator';
+import { MatSortModule, MatSort } from '@angular/material/sort';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { NgChartsModule } from 'ng2-charts';
 import { ChartConfiguration, ChartData } from 'chart.js';
 import { TimesheetService, FilterParams, PaginationParams } from '../timesheet/services/timesheet.service';
@@ -37,6 +38,7 @@ import { ReportService, ReportData, ReportFilters } from '../services/report.ser
     MatSelectModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatTooltipModule,
     NgChartsModule
   ],
   template: `
@@ -68,7 +70,7 @@ import { ReportService, ReportData, ReportFilters } from '../services/report.ser
             <mat-select [(ngModel)]="filters.status" (selectionChange)="reload()">
               <mat-option value="">All</mat-option>
               <mat-option value="Completed">Completed</mat-option>
-              <mat-option value="CarriedOut">Carried Out</mat-option>
+              <mat-option value="CarriedOut">Ongoing</mat-option>
               <mat-option value="NotStarted">Not Started</mat-option>
             </mat-select>
           </mat-form-field>
@@ -109,46 +111,85 @@ import { ReportService, ReportData, ReportFilters } from '../services/report.ser
       <div class="charts">
         <mat-card class="chart">
           <h3>Status Distribution</h3>
-          <canvas baseChart [data]="statusChartData" [type]="'doughnut'" [options]="doughnutOptions"></canvas>
+          <div class="chart-container">
+            <canvas baseChart [data]="statusChartData" [type]="'doughnut'" [options]="doughnutOptions"></canvas>
+          </div>
         </mat-card>
         <mat-card class="chart">
-          <h3>Top Departments</h3>
-          <canvas baseChart [data]="deptChartData" [type]="'bar'" [options]="barOptions"></canvas>
+          <h3>{{ getDepartmentChartTitle() }}</h3>
+          <div class="chart-container">
+            <canvas baseChart [data]="deptChartData" [type]="'bar'" [options]="barOptions"></canvas>
+          </div>
         </mat-card>
       </div>
 
       <mat-card>
-        <h3>Timesheet Entries</h3>
+        <div class="table-header">
+          <h3>Timesheet Entries (All Data)</h3>
+          <div class="table-controls">
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>Search</mat-label>
+              <input matInput (keyup)="applyTableFilter($event)" placeholder="Search all columns..." #searchInput />
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="status-filter">
+              <mat-label>Filter by Status</mat-label>
+              <mat-select [(ngModel)]="tableStatusFilter" (selectionChange)="applyStatusFilter()">
+                <mat-option value="">All Statuses</mat-option>
+                <mat-option value="Completed">Completed</mat-option>
+                <mat-option value="CarriedOut">Ongoing</mat-option>
+                <mat-option value="NotStarted">Not Started</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <button mat-icon-button (click)="clearTableFilters()" matTooltip="Clear filters" *ngIf="tableStatusFilter || searchInput.value">
+              <mat-icon>clear</mat-icon>
+            </button>
+          </div>
+        </div>
         <div class="table-wrap">
-          <table mat-table [dataSource]="report?.entries || []" class="mat-elevation-z0">
+          <table mat-table [dataSource]="entriesDataSource" matSort class="mat-elevation-z0">
             <ng-container matColumnDef="date">
-              <th mat-header-cell *matHeaderCellDef>Date</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
               <td mat-cell *matCellDef="let e">{{e.date | date:'mediumDate'}}</td>
             </ng-container>
             <ng-container matColumnDef="user">
-              <th mat-header-cell *matHeaderCellDef>Employee</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Employee</th>
               <td mat-cell *matCellDef="let e">{{e.user_first_name}} {{e.user_last_name}}</td>
             </ng-container>
             <ng-container matColumnDef="department">
-              <th mat-header-cell *matHeaderCellDef>Department</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Department</th>
               <td mat-cell *matCellDef="let e">{{e.department}}</td>
             </ng-container>
             <ng-container matColumnDef="task">
-              <th mat-header-cell *matHeaderCellDef>Task</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Task</th>
               <td mat-cell *matCellDef="let e">{{e.task}}</td>
             </ng-container>
+            <ng-container matColumnDef="timeRange">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Time Range</th>
+              <td mat-cell *matCellDef="let e">{{e.start_time}} - {{e.end_time}}</td>
+            </ng-container>
             <ng-container matColumnDef="hours">
-              <th mat-header-cell *matHeaderCellDef>Hours</th>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Hours</th>
               <td mat-cell *matCellDef="let e">{{e.total_hours}}</td>
             </ng-container>
             <ng-container matColumnDef="status">
-              <th mat-header-cell *matHeaderCellDef>Status</th>
-              <td mat-cell *matCellDef="let e">{{e.status === 'CarriedOut' ? 'Carried Out' : (e.status === 'NotStarted' ? 'Not Started' : e.status)}}</td>
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+              <td mat-cell *matCellDef="let e">{{e.status === 'CarriedOut' ? 'Ongoing' : (e.status === 'NotStarted' ? 'Not Started' : e.status)}}</td>
+            </ng-container>
+            <ng-container matColumnDef="created">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Created</th>
+              <td mat-cell *matCellDef="let e">{{e.created_at | date:'medium'}}</td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
           </table>
+          <mat-paginator 
+            [pageSizeOptions]="[10, 25, 50, 100]"
+            [pageSize]="10"
+            showFirstLastButtons
+            aria-label="Select page of entries">
+          </mat-paginator>
         </div>
       </mat-card>
     </div>
@@ -163,12 +204,26 @@ import { ReportService, ReportData, ReportFilters } from '../services/report.ser
     .kpi { padding: 12px; display: grid; gap: 6px; }
     .kpi .label { color: var(--aja-grey); font-size: 12px; }
     .kpi .value { font-size: 22px; color: var(--aja-charcoal); }
-    .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px,1fr)); gap: 12px; }
-    .chart { padding: 12px; }
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .chart { padding: 16px; }
+    .chart h3 { margin: 0 0 16px 0; font-size: 16px; color: var(--aja-charcoal); font-weight: 500; }
+    .chart-container { height: 280px; position: relative; }
+    .chart-container canvas { max-height: 280px !important; height: 280px !important; }
+    @media (max-width: 1200px) {
+      .charts { grid-template-columns: 1fr; }
+    }
+    .table-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; gap: 16px; flex-wrap: wrap; }
+    .table-header h3 { margin: 8px 0 0 0; }
+    .table-controls { display: flex; gap: 12px; align-items: center; }
+    .search-field { min-width: 280px; }
+    .status-filter { min-width: 180px; }
     .table-wrap { overflow: auto; }
   `]
 })
-export class AdminReportDetailComponent implements OnInit {
+export class AdminReportDetailComponent implements OnInit, AfterViewInit {
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
+  
   @Input() userRole: 'ADMIN' | 'SUPERVISOR' = 'ADMIN';
   @Input() userDepartment: string = '';
 
@@ -176,16 +231,48 @@ export class AdminReportDetailComponent implements OnInit {
     return this.userRole === 'ADMIN';
   }
 
-  displayedColumns = ['date','user','department','task','hours','status'];
+  displayedColumns = ['date','user','department','task','timeRange','hours','status','created'];
   report: ReportData | null = null;
   filters: FilterParams = {};
   dateFrom?: Date;
   dateTo?: Date;
 
-  statusChartData: ChartData<'doughnut'> = { labels: ['Completed','Carried Out','Not Started'], datasets: [{ data: [0,0,0], backgroundColor: ['#059669','#f59e0b','#dc2626'] }] };
+  // Data source for paginated table
+  entriesDataSource = new MatTableDataSource<TimesheetEntry>([]);
+  
+  // Table filtering
+  tableStatusFilter: string = '';
+  allEntries: TimesheetEntry[] = []; // Store all entries for filtering
+
+  statusChartData: ChartData<'doughnut'> = { labels: ['Completed','Ongoing','Not Started'], datasets: [{ data: [0,0,0], backgroundColor: ['#059669','#f59e0b','#dc2626'] }] };
   deptChartData: ChartData<'bar'> = { labels: [], datasets: [{ data: [], backgroundColor: '#44505E' }] };
-  doughnutOptions: ChartConfiguration<'doughnut'>['options'] = { responsive: true, maintainAspectRatio: false };
-  barOptions: ChartConfiguration<'bar'>['options'] = { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } };
+  doughnutOptions: ChartConfiguration<'doughnut'>['options'] = { 
+    responsive: true, 
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom'
+      }
+    }
+  };
+  barOptions: ChartConfiguration<'bar'>['options'] = { 
+    responsive: true, 
+    maintainAspectRatio: false, 
+    indexAxis: 'y',
+    scales: { 
+      x: { beginAtZero: true },
+      y: {
+        ticks: {
+          autoSkip: false
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        display: false
+      }
+    }
+  };
 
   constructor(
     private route: ActivatedRoute,
@@ -219,8 +306,34 @@ export class AdminReportDetailComponent implements OnInit {
     });
   }
 
+  ngAfterViewInit(): void {
+    this.entriesDataSource.paginator = this.paginator;
+    this.entriesDataSource.sort = this.sort;
+    
+    // Custom filter predicate to search across all columns
+    this.entriesDataSource.filterPredicate = (data: TimesheetEntry, filter: string) => {
+      const searchStr = filter.toLowerCase();
+      const statusDisplay = data.status === 'CarriedOut' ? 'Ongoing' : (data.status === 'NotStarted' ? 'Not Started' : data.status);
+      
+      return (
+        data.date?.toString().toLowerCase().includes(searchStr) ||
+        data.user_first_name?.toLowerCase().includes(searchStr) ||
+        data.user_last_name?.toLowerCase().includes(searchStr) ||
+        `${data.user_first_name} ${data.user_last_name}`.toLowerCase().includes(searchStr) ||
+        data.department?.toLowerCase().includes(searchStr) ||
+        data.task?.toLowerCase().includes(searchStr) ||
+        data.total_hours?.toString().includes(searchStr) ||
+        statusDisplay.toLowerCase().includes(searchStr) ||
+        data.activity?.toLowerCase().includes(searchStr) ||
+        data.client_file_number?.toLowerCase().includes(searchStr)
+      );
+    };
+  }
+
   reload(): void {
-    const pagination: PaginationParams = { page: 1, limit: 1000 };
+    // Limit to 100 entries for detail view to prevent browser crash with large datasets
+    // Load ALL entries - no limitations, optimized SQL handles performance
+    const pagination: PaginationParams = { page: 1, limit: 100000 };
     this.timesheetService.getAllEntries(pagination, this.filters).subscribe(res => {
       const reportFilters: ReportFilters = {
         department: this.filters.department,
@@ -231,33 +344,124 @@ export class AdminReportDetailComponent implements OnInit {
         billable: this.filters.billable
       };
       this.report = this.reportService.createReportData(res.entries, reportFilters);
+      this.allEntries = res.entries; // Store all entries
+      this.applyTableFiltersInternal(); // Apply any existing table filters
       this.updateCharts();
     });
   }
 
+  applyTableFilter(event: Event): void {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.entriesDataSource.filter = filterValue.trim().toLowerCase();
+
+    if (this.entriesDataSource.paginator) {
+      this.entriesDataSource.paginator.firstPage();
+    }
+  }
+
+  applyStatusFilter(): void {
+    this.applyTableFiltersInternal();
+  }
+
+  applyTableFiltersInternal(): void {
+    let filteredData = [...this.allEntries];
+
+    // Apply status filter
+    if (this.tableStatusFilter) {
+      filteredData = filteredData.filter(entry => entry.status === this.tableStatusFilter);
+    }
+
+    this.entriesDataSource.data = filteredData;
+
+    if (this.entriesDataSource.paginator) {
+      this.entriesDataSource.paginator.firstPage();
+    }
+  }
+
+  clearTableFilters(): void {
+    this.tableStatusFilter = '';
+    this.entriesDataSource.filter = '';
+    this.applyTableFiltersInternal();
+    
+    // Clear search input
+    const searchInput = document.querySelector('.search-field input') as HTMLInputElement;
+    if (searchInput) {
+      searchInput.value = '';
+    }
+  }
+
   updateCharts(): void {
-    if (!this.report) return;
+    if (!this.report || !this.report.entries || this.report.entries.length === 0) {
+      console.log('No report data available for charts');
+      return;
+    }
+    
+    console.log('Updating charts with', this.report.entries.length, 'entries');
+    
+    // Status distribution chart
     const completed = this.report.entries.filter(e => e.status === 'Completed').length;
     const carried = this.report.entries.filter(e => e.status === 'CarriedOut').length;
     const notStarted = this.report.entries.filter(e => e.status === 'NotStarted').length;
+    
+    console.log('Status counts:', { completed, carried, notStarted });
+    
     this.statusChartData = {
-      labels: ['Completed','Carried Out','Not Started'],
-      datasets: [{ data: [completed, carried, notStarted], backgroundColor: ['#059669','#f59e0b','#dc2626'] }]
+      labels: ['Completed','Ongoing','Not Started'],
+      datasets: [{ 
+        data: [completed, carried, notStarted], 
+        backgroundColor: ['#059669','#f59e0b','#dc2626'],
+        borderWidth: 0
+      }]
     };
 
+    // Department hours chart - aggregate efficiently
     const deptMap = new Map<string, number>();
     this.report.entries.forEach(e => {
       const hours = parseFloat((e.total_hours as any)?.toString() || '0') || 0;
       deptMap.set(e.department, (deptMap.get(e.department) || 0) + hours);
     });
-    const top = Array.from(deptMap.entries()).sort((a,b)=>b[1]-a[1]).slice(0,7);
-    this.deptChartData = { labels: top.map(t=>t[0]), datasets: [{ data: top.map(t=>t[1]), backgroundColor: '#44505E' }] };
+    
+    // Limit to top 7 departments to prevent chart overload
+    const top = Array.from(deptMap.entries())
+      .sort((a,b) => b[1] - a[1]);
+      // Show all departments instead of limiting to top 7
+    
+    console.log('Top departments:', top);
+      
+    this.deptChartData = { 
+      labels: top.map(t => t[0]), 
+      datasets: [{ 
+        data: top.map(t => t[1]), 
+        backgroundColor: '#44505E',
+        borderWidth: 0,
+        label: 'Hours'
+      }] 
+    };
+    
+    console.log('Charts updated successfully');
   }
 
   onDateChange(): void {
-    if (this.dateFrom) this.filters.dateFrom = this.dateFrom.toISOString().split('T')[0];
-    if (this.dateTo) this.filters.dateTo = this.dateTo.toISOString().split('T')[0];
+    // Use local date formatting to avoid timezone issues
+    if (this.dateFrom) {
+      this.filters.dateFrom = `${this.dateFrom.getFullYear()}-${String(this.dateFrom.getMonth() + 1).padStart(2, '0')}-${String(this.dateFrom.getDate()).padStart(2, '0')}`;
+    }
+    if (this.dateTo) {
+      this.filters.dateTo = `${this.dateTo.getFullYear()}-${String(this.dateTo.getMonth() + 1).padStart(2, '0')}-${String(this.dateTo.getDate()).padStart(2, '0')}`;
+    }
     this.reload();
+  }
+
+  getDepartmentChartTitle(): string {
+    const deptCount = this.deptChartData?.labels?.length || 0;
+    
+    if (this.filters.userEmail && !this.filters.department) {
+      return deptCount > 1 ? 'Departments Worked On (Hours)' : 'Department (Hours)';
+    } else if (this.filters.department) {
+      return 'Department Hours';
+    } else {
+      return `All Departments (Hours)`;
+    }
   }
 
   export(type: 'pdf'|'xlsx'|'csv'): void {

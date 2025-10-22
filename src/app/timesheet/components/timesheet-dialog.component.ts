@@ -161,7 +161,7 @@ function timeToMinutes(time: string): number {
                 <mat-label>Status</mat-label>
                 <mat-select formControlName="status" required>
                   <mat-option value="Completed">Completed</mat-option>
-                  <mat-option value="CarriedOut">Carried Out</mat-option>
+                  <mat-option value="CarriedOut">Ongoing</mat-option>
                   <mat-option value="NotStarted">Not Started</mat-option>
                 </mat-select>
                 <mat-error *ngIf="form.get('status')?.hasError('required')">Status is required</mat-error>
@@ -204,8 +204,9 @@ function timeToMinutes(time: string): number {
             <!-- Row 4: Activity (Full Width) -->
             <div class="form-row full-width">
             <mat-form-field appearance="outline" matTooltip="Brief description of the work you did" matTooltipPosition="above">
-                <mat-label>Activity</mat-label>
-                <textarea matInput formControlName="activity" rows="2"></textarea>
+                <mat-label>Activity *</mat-label>
+                <textarea matInput formControlName="activity" rows="2" required></textarea>
+                <mat-error *ngIf="form.get('activity')?.hasError('required')">Activity description is required</mat-error>
                 <mat-hint>e.g., Drafted affidavit, configured firewall rules…</mat-hint>
             </mat-form-field>
           </div>
@@ -530,21 +531,21 @@ export class TimesheetDialogComponent implements OnInit {
     console.log('🔍 Dialog constructor - isEdit:', this.isEdit);
     console.log('🔍 Dialog constructor - isView:', this.isView);
     
-    // Get current user's department
+    // Get current user's department - ALWAYS ensure it's populated
     const currentUser = this.authService.getCurrentUser();
-    const userDepartment = currentUser?.department || 'IT'; // Default to IT if no user found
+    const userDepartment = currentUser?.department || 'IT'; // Fallback to IT if no user found
     
     this.form = this.fb.group({
       date: [this.isEdit || this.isView ? '' : new Date(), Validators.required],
       clientFileNumber: ['', Validators.required],
       department: [userDepartment, Validators.required],
       task: ['', Validators.required],
-      activity: [''],
-      priority: ['Medium', Validators.required],
-      startTime: [this.isEdit || this.isView ? '' : '07:00', Validators.required],
-      endTime: [this.isEdit || this.isView ? '' : '17:00', Validators.required],
-      status: ['NotStarted', Validators.required],
-      billable: [true],
+      activity: ['', Validators.required],
+      priority: ['', Validators.required],
+      startTime: [this.isEdit || this.isView ? '' : '', Validators.required],
+      endTime: [this.isEdit || this.isView ? '' : '', Validators.required],
+      status: ['', Validators.required],
+      billable: [false],
       comments: ['']
     }, { validators: timeRangeValidator() });
     
@@ -556,25 +557,15 @@ export class TimesheetDialogComponent implements OnInit {
       this.form.disable();
     }
 
-    // Generate time intervals for mat-select (7 AM to 5 PM only, 15-minute intervals)
-    for (let hour = 7; hour <= 17; hour++) {
+    // Generate time intervals for mat-select (24 hours, 15-minute intervals)
+    for (let hour = 0; hour < 24; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
         const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         this.timeIntervals.push(time);
       }
     }
 
-    // Smart default times: start = last end or 08:00, end = +1h
-    const lastEnd = localStorage.getItem('ts_last_end_time');
-    const defaultStart = lastEnd || '08:00';
-    const [h, m] = defaultStart.split(':').map(Number);
-    const endMinutes = h * 60 + m + 60;
-    const endH = Math.min(23, Math.floor(endMinutes / 60));
-    const endM = endMinutes % 60;
-    const defaultEnd = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
-    if (!this.isEdit && !this.isView) {
-      this.form.patchValue({ startTime: defaultStart, endTime: defaultEnd });
-    }
+    // No default times - let user choose
   }
 
   ngOnInit(): void {
@@ -608,6 +599,10 @@ export class TimesheetDialogComponent implements OnInit {
       });
     } else {
       console.log('➕ Creating new entry - using current date');
+      // Ensure department is always set for new entries
+      const currentUser = this.authService.getCurrentUser();
+      const userDepartment = currentUser?.department || 'IT';
+      this.form.patchValue({ department: userDepartment });
     }
 
     // Initialize available tasks based on user's department
@@ -637,17 +632,7 @@ export class TimesheetDialogComponent implements OnInit {
     this.calculateHours();
     this.updateBillableState();
 
-    // Restore last used client/task to speed up entry
-    try {
-      const lastClient = localStorage.getItem('ts_last_client');
-      const lastTask = localStorage.getItem('ts_last_task');
-      const patch: any = {};
-      if (!this.isEdit && !this.isView) {
-        if (lastClient) patch.clientFileNumber = lastClient;
-        if (lastTask) patch.task = lastTask;
-        if (Object.keys(patch).length) this.form.patchValue(patch);
-      }
-    } catch (_) {}
+    // No auto-restoration - let user enter fresh data each time
   }
 
   onTaskPanelOpened(opened: boolean) {

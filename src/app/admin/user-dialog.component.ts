@@ -49,7 +49,7 @@ import { AuthService, User } from '../services/auth.service';
       <div class="dialog-body">
         <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="user-form">
           <div class="form-section">
-            <h3 class="section-title">Personal Information</h3>
+            <h3 class="section-title">User Information</h3>
             <div class="form-row">
               <mat-form-field appearance="outline" class="form-field">
                 <mat-label>First Name</mat-label>
@@ -68,27 +68,30 @@ import { AuthService, User } from '../services/auth.service';
                   Last name is required
                 </mat-error>
               </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Email Address</mat-label>
+                <input matInput 
+                       formControlName="email" 
+                       [placeholder]="data.mode === 'edit' ? 'Email cannot be changed' : 'Enter email address'"
+                       type="email"
+                       [readonly]="data.mode === 'edit'">
+                <mat-icon matSuffix>email</mat-icon>
+                <mat-hint *ngIf="data.mode === 'edit'">Email cannot be modified</mat-hint>
+                <mat-error *ngIf="userForm.get('email')?.hasError('required')">
+                  Email is required
+                </mat-error>
+                <mat-error *ngIf="userForm.get('email')?.hasError('email')">
+                  Please enter a valid email address
+                </mat-error>
+              </mat-form-field>
             </div>
 
-            <mat-form-field appearance="outline" class="form-field">
-              <mat-label>Email Address</mat-label>
-              <input matInput formControlName="email" placeholder="Enter email address" type="email">
-              <mat-icon matSuffix>email</mat-icon>
-              <mat-error *ngIf="userForm.get('email')?.hasError('required')">
-                Email is required
-              </mat-error>
-              <mat-error *ngIf="userForm.get('email')?.hasError('email')">
-                Please enter a valid email address
-              </mat-error>
-            </mat-form-field>
-          </div>
-
-          <div class="form-section">
-            <h3 class="section-title">Role & Department</h3>
             <div class="form-row">
               <mat-form-field appearance="outline" class="form-field">
                 <mat-label>Role</mat-label>
                 <mat-select formControlName="role">
+                  <mat-option value="ADMIN">Admin</mat-option>
                   <mat-option value="SUPERVISOR">Supervisor</mat-option>
                   <mat-option value="STAFF">Staff</mat-option>
                 </mat-select>
@@ -112,23 +115,25 @@ import { AuthService, User } from '../services/auth.service';
                   Department is required
                 </mat-error>
               </mat-form-field>
-            </div>
-          </div>
 
-          <div class="form-section">
-            <h3 class="section-title">Security</h3>
-            <mat-form-field appearance="outline" class="form-field">
-              <mat-label>Password</mat-label>
-              <input matInput type="password" formControlName="password" placeholder="Enter password">
-              <mat-icon matSuffix>lock</mat-icon>
-              <mat-hint>Minimum 6 characters required</mat-hint>
-              <mat-error *ngIf="userForm.get('password')?.hasError('required')">
-                Password is required
-              </mat-error>
-              <mat-error *ngIf="userForm.get('password')?.hasError('minlength')">
-                Password must be at least 6 characters
-              </mat-error>
-            </mat-form-field>
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Password</mat-label>
+                <input matInput 
+                       type="password" 
+                       formControlName="password" 
+                       [placeholder]="data.mode === 'edit' ? 'Password cannot be changed here' : 'Enter password'"
+                       [readonly]="data.mode === 'edit'">
+                <mat-icon matSuffix>lock</mat-icon>
+                <mat-hint *ngIf="data.mode === 'add'">Minimum 4 characters</mat-hint>
+                <mat-hint *ngIf="data.mode === 'edit'">Use 'Reset Password' to change password</mat-hint>
+                <mat-error *ngIf="userForm.get('password')?.hasError('required')">
+                  Password is required
+                </mat-error>
+                <mat-error *ngIf="userForm.get('password')?.hasError('minlength')">
+                  Password must be at least 4 characters
+                </mat-error>
+              </mat-form-field>
+            </div>
           </div>
 
           <div class="form-actions">
@@ -149,38 +154,40 @@ import { AuthService, User } from '../services/auth.service';
       min-width: 600px;
       max-width: 700px;
       padding: 0;
-      border-radius: 8px;
+      border-radius: 12px;
       overflow: hidden;
       background: white;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      border: 1px solid #e2e8f0;
     }
 
     .dialog-header {
-      background: #2c3e50;
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
       color: white;
       padding: 0;
       margin: 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     .header-content {
-      padding: 24px 32px;
+      padding: 20px 24px;
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
     }
 
     .header-left {
       display: flex;
-      align-items: flex-start;
-      gap: 16px;
+      align-items: center;
+      gap: 12px;
       flex: 1;
     }
 
     .header-icon {
-      width: 48px;
-      height: 48px;
+      width: 32px;
+      height: 32px;
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -188,9 +195,9 @@ import { AuthService, User } from '../services/auth.service';
     }
 
     .header-icon mat-icon {
-      font-size: 24px;
-      width: 24px;
-      height: 24px;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
       color: white;
     }
 
@@ -199,19 +206,14 @@ import { AuthService, User } from '../services/auth.service';
     }
 
     .dialog-title {
-      font-size: 24px;
-      font-weight: 500;
-      margin: 0 0 8px 0;
-      line-height: 1.2;
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
       color: white;
     }
 
     .dialog-subtitle {
-      margin: 0;
-      opacity: 0.8;
-      font-size: 14px;
-      line-height: 1.4;
-      color: rgba(255, 255, 255, 0.9);
+      display: none;
     }
 
     .close-btn {
@@ -227,28 +229,52 @@ import { AuthService, User } from '../services/auth.service';
     }
 
     .dialog-body {
-      padding: 32px;
-      background: white;
+      padding: 24px;
+      background: #f8fafc;
     }
 
     .form-section {
-      margin-bottom: 32px;
+      margin-bottom: 24px;
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
     }
 
     .section-title {
       font-size: 16px;
-      font-weight: 500;
-      margin: 0 0 20px 0;
-      color: #2c3e50;
+      font-weight: 600;
+      margin: 0 0 16px 0;
+      color: #1e293b;
       padding-bottom: 8px;
-      border-bottom: 1px solid #ecf0f1;
+      border-bottom: 2px solid #3b82f6;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 16px;
+      background: #3b82f6;
+      border-radius: 2px;
     }
 
     .form-row {
       display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .form-row.single {
+      grid-template-columns: 1fr;
+    }
+
+    .form-row.double {
       grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      margin-bottom: 20px;
     }
 
     .form-field {
@@ -256,68 +282,96 @@ import { AuthService, User } from '../services/auth.service';
     }
 
     .form-field ::ng-deep .mat-form-field-outline {
-      color: #bdc3c7;
+      color: #cbd5e1;
     }
 
     .form-field ::ng-deep .mat-form-field-label {
-      color: #34495e;
+      color: #475569;
       font-weight: 500;
     }
 
     .form-field ::ng-deep .mat-form-field-outline-thick {
-      color: #3498db;
+      color: #3b82f6;
     }
 
     .form-field ::ng-deep .mat-form-field-hint {
-      color: #7f8c8d;
+      color: #64748b;
       font-size: 12px;
+    }
+
+    .form-field ::ng-deep .mat-form-field-wrapper {
+      padding-bottom: 0;
+    }
+
+    .form-field ::ng-deep .mat-form-field-infix {
+      border-top: none;
+    }
+
+    .form-field input[readonly] {
+      background-color: #f8fafc;
+      color: #64748b;
+      cursor: not-allowed;
+    }
+
+    .form-field input[readonly]:focus {
+      background-color: #f8fafc;
+      color: #64748b;
     }
 
     .form-actions {
       display: flex;
       justify-content: flex-end;
-      gap: 16px;
-      margin-top: 40px;
-      padding-top: 24px;
-      border-top: 1px solid #ecf0f1;
+      gap: 12px;
+      margin-top: 24px;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border: 1px solid #e2e8f0;
     }
 
     .cancel-btn {
-      color: #7f8c8d;
-      border-color: #bdc3c7;
+      color: #64748b;
+      border-color: #cbd5e1;
       border-radius: 6px;
-      padding: 12px 24px;
+      padding: 10px 20px;
       font-weight: 500;
-      transition: all 0.2s ease;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background: white;
     }
 
     .cancel-btn:hover {
-      background: #f8f9fa;
-      border-color: #95a5a6;
-      color: #34495e;
+      background: #f8fafc;
+      border-color: #94a3b8;
+      color: #475569;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .submit-btn {
-      background: #3498db;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
       color: white;
       border-radius: 6px;
-      padding: 12px 24px;
-      font-weight: 500;
+      padding: 10px 20px;
+      font-weight: 600;
+      font-size: 14px;
       border: none;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
       display: flex;
       align-items: center;
       gap: 8px;
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
     }
 
     .submit-btn:hover:not(:disabled) {
-      background: #2980b9;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
     }
 
     .submit-btn:disabled {
-      background: #bdc3c7;
+      background: #cbd5e1;
       cursor: not-allowed;
       transform: none;
       box-shadow: none;
@@ -325,29 +379,35 @@ import { AuthService, User } from '../services/auth.service';
 
     @media (max-width: 768px) {
       .dialog-container {
-        min-width: 90vw;
-        max-width: 90vw;
+        min-width: 95vw;
+        max-width: 95vw;
+        max-height: 95vh;
       }
 
       .header-content {
-        padding: 20px 24px;
+        padding: 16px 20px;
         flex-direction: column;
-        gap: 16px;
+        gap: 12px;
       }
 
       .header-left {
         flex-direction: column;
         text-align: center;
-        gap: 12px;
+        gap: 8px;
       }
 
       .dialog-body {
-        padding: 24px;
+        padding: 16px;
+      }
+
+      .form-section {
+        padding: 16px;
+        margin-bottom: 16px;
       }
 
       .form-row {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 12px;
       }
 
       .form-actions {
@@ -378,18 +438,19 @@ export class UserDialogComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       role: ['STAFF', Validators.required],
       department: ['', Validators.required],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(4)]]
     });
   }
 
   ngOnInit(): void {
     if (this.data.mode === 'edit' && this.data.user) {
       this.userForm.patchValue({
-        firstName: this.data.user.firstName,
-        lastName: this.data.user.lastName,
+        firstName: this.data.user.firstName || this.data.user.first_name,
+        lastName: this.data.user.lastName || this.data.user.last_name,
         email: this.data.user.email,
         role: this.data.user.role,
-        department: this.data.user.department
+        department: this.data.user.department,
+        password: '' // Clear password field for security
       });
       
       // Remove password requirement for edit mode
@@ -403,16 +464,59 @@ export class UserDialogComponent implements OnInit {
       const formValue = this.userForm.value;
       
       if (this.data.mode === 'add') {
-        // Handle add user logic
-        console.log('Adding new user:', formValue);
-        this.snackBar.open('User created successfully!', 'Close', { duration: 3000 });
+        // Debug: Log the form values
+        console.log('Form values being sent:', formValue);
+        console.log('Password value:', formValue.password);
+        console.log('Role value:', formValue.role);
+        console.log('Current user:', this.authService.getCurrentUser());
+        console.log('Auth token:', this.authService.getToken());
+        
+        // Create new user
+        this.authService.registerUser({
+          email: formValue.email,
+          password: formValue.password,
+          firstName: formValue.firstName,
+          lastName: formValue.lastName,
+          role: formValue.role,
+          department: formValue.department
+        }).subscribe({
+          next: (response) => {
+            console.log('User created successfully:', response);
+            this.snackBar.open('User created successfully!', 'Close', { duration: 3000 });
+            this.dialogRef.close(formValue);
+          },
+          error: (error) => {
+            console.error('Error creating user:', error);
+            this.snackBar.open('Error creating user: ' + (error.error?.message || error.message), 'Close', { duration: 5000 });
+          }
+        });
       } else {
         // Handle edit user logic
         console.log('Updating user:', formValue);
-        this.snackBar.open('User updated successfully!', 'Close', { duration: 3000 });
+        
+        // Prepare update data (exclude password and email for security)
+        const updateData: any = {
+          firstName: formValue.firstName,
+          lastName: formValue.lastName,
+          role: formValue.role,
+          department: formValue.department
+        };
+        
+        // Note: Password and email updates are handled separately for security
+        
+        // Call the update user service
+        this.authService.updateUser(this.data.user?.id || '', updateData).subscribe({
+          next: (response) => {
+            console.log('User updated successfully:', response);
+            this.snackBar.open('User updated successfully!', 'Close', { duration: 3000 });
+            this.dialogRef.close(updateData);
+          },
+          error: (error) => {
+            console.error('Error updating user:', error);
+            this.snackBar.open('Error updating user: ' + (error.error?.message || error.message), 'Close', { duration: 5000 });
+          }
+        });
       }
-      
-      this.dialogRef.close(formValue);
     }
   }
 

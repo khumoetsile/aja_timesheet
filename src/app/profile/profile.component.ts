@@ -7,9 +7,15 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService, User } from '../services/auth.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-profile',
@@ -22,7 +28,11 @@ import { AuthService, User } from '../services/auth.service';
     MatDividerModule,
     MatChipsModule,
     MatTooltipModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    ReactiveFormsModule
   ],
   template: `
     <div class="profile-container">
@@ -184,6 +194,11 @@ import { AuthService, User } from '../services/auth.service';
                 <span>View Timesheet</span>
               </button>
               
+              <button mat-stroked-button class="action-btn" (click)="changePassword()" matTooltip="Change Password">
+                <mat-icon>lock</mat-icon>
+                <span>Change Password</span>
+              </button>
+              
               <button mat-stroked-button class="action-btn" (click)="exportProfile()" matTooltip="Export Profile Data">
                 <mat-icon>download</mat-icon>
                 <span>Export Profile</span>
@@ -222,6 +237,63 @@ import { AuthService, User } from '../services/auth.service';
           <mat-icon>refresh</mat-icon>
           Try Again
         </button>
+      </div>
+    </div>
+
+    <!-- Password Change Dialog -->
+    <div class="password-dialog" *ngIf="showPasswordDialog">
+      <div class="dialog-overlay" (click)="closePasswordDialog()"></div>
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <h2>Change Password</h2>
+          <button mat-icon-button (click)="closePasswordDialog()" class="close-btn">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        
+        <form [formGroup]="passwordForm" (ngSubmit)="onPasswordSubmit()" class="password-form">
+          <div class="form-field">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Current Password</mat-label>
+              <input matInput type="password" formControlName="currentPassword" placeholder="Enter current password">
+              <mat-icon matSuffix>lock</mat-icon>
+            </mat-form-field>
+          </div>
+          
+          <div class="form-field">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>New Password</mat-label>
+              <input matInput type="password" formControlName="newPassword" placeholder="Enter new password">
+              <mat-icon matSuffix>lock_outline</mat-icon>
+            </mat-form-field>
+          </div>
+          
+          <div class="form-field">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Confirm New Password</mat-label>
+              <input matInput type="password" formControlName="confirmPassword" placeholder="Confirm new password">
+              <mat-icon matSuffix>lock_outline</mat-icon>
+            </mat-form-field>
+          </div>
+          
+          <div class="password-requirements">
+            <h4>Password Requirements:</h4>
+            <ul>
+              <li>At least 4 characters long</li>
+            </ul>
+          </div>
+          
+          <div class="form-actions">
+            <button mat-stroked-button type="button" (click)="closePasswordDialog()" [disabled]="isChangingPassword">
+              Cancel
+            </button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="passwordForm.invalid || isChangingPassword">
+              <mat-icon *ngIf="isChangingPassword">hourglass_empty</mat-icon>
+              <mat-icon *ngIf="!isChangingPassword">save</mat-icon>
+              {{ isChangingPassword ? 'Changing...' : 'Change Password' }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   `,
@@ -711,18 +783,162 @@ import { AuthService, User } from '../services/auth.service';
         font-size: 14px;
       }
     }
+
+    /* Password Dialog Styles */
+    .password-dialog {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dialog-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+
+    .dialog-content {
+      position: relative;
+      background: var(--aja-surface-1);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      z-index: 1001;
+    }
+
+    .dialog-header {
+      padding: var(--spacing-lg);
+      border-bottom: 1px solid var(--aja-grey-lighter);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--aja-surface-2);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    .dialog-header h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: var(--font-weight-semibold);
+      color: var(--aja-charcoal);
+    }
+
+    .close-btn {
+      color: var(--aja-grey);
+    }
+
+    .password-form {
+      padding: var(--spacing-lg);
+    }
+
+    .form-field {
+      margin-bottom: var(--spacing-md);
+    }
+
+    .full-width {
+      width: 100%;
+    }
+
+    .password-requirements {
+      background: var(--aja-surface-2);
+      border: 1px solid var(--aja-grey-lighter);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md);
+      margin: var(--spacing-md) 0;
+    }
+
+    .password-requirements h4 {
+      margin: 0 0 var(--spacing-sm) 0;
+      font-size: 14px;
+      font-weight: var(--font-weight-medium);
+      color: var(--aja-charcoal);
+    }
+
+    .password-requirements ul {
+      margin: 0;
+      padding-left: var(--spacing-md);
+      color: var(--aja-grey);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .password-requirements li {
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: var(--spacing-md);
+      justify-content: flex-end;
+      margin-top: var(--spacing-lg);
+      padding-top: var(--spacing-md);
+      border-top: 1px solid var(--aja-grey-lighter);
+    }
+
+    .form-actions button {
+      min-width: 120px;
+    }
+
+    @media (max-width: 480px) {
+      .dialog-content {
+        width: 95%;
+        margin: var(--spacing-sm);
+      }
+
+      .dialog-header {
+        padding: var(--spacing-md);
+      }
+
+      .password-form {
+        padding: var(--spacing-md);
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .form-actions button {
+        width: 100%;
+      }
+    }
   `]
 })
 export class ProfileComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   private destroy$ = new Subject<void>();
   error: string | null = null;
+  
+  // Password change properties
+  showPasswordDialog = false;
+  passwordForm: FormGroup;
+  isChangingPassword = false;
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar
-  ) {}
+    private snackBar: MatSnackBar,
+    private http: HttpClient,
+    private fb: FormBuilder
+  ) {
+    this.passwordForm = this.fb.group({
+      currentPassword: ['', [Validators.required]],
+      newPassword: ['', [Validators.required, Validators.minLength(4)]],
+      confirmPassword: ['', [Validators.required]]
+    }, { validators: this.passwordMatchValidator });
+  }
 
   ngOnInit() {
     this.loadProfile();
@@ -937,5 +1153,71 @@ export class ProfileComponent implements OnInit, OnDestroy {
   retryLoad() {
     this.error = null;
     this.loadProfile();
+  }
+
+  // Password change methods
+  changePassword() {
+    this.showPasswordDialog = true;
+    this.passwordForm.reset();
+  }
+
+  closePasswordDialog() {
+    this.showPasswordDialog = false;
+    this.passwordForm.reset();
+    this.isChangingPassword = false;
+  }
+
+  onPasswordSubmit() {
+    if (this.passwordForm.valid && !this.isChangingPassword) {
+      this.isChangingPassword = true;
+      
+      const passwordData = {
+        currentPassword: this.passwordForm.value.currentPassword,
+        newPassword: this.passwordForm.value.newPassword
+      };
+
+      this.authService.changePassword(passwordData.currentPassword, passwordData.newPassword)
+        .subscribe({
+          next: (response: any) => {
+            this.isChangingPassword = false;
+            this.snackBar.open('Password changed successfully!', 'Close', { 
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.closePasswordDialog();
+          },
+          error: (error) => {
+            this.isChangingPassword = false;
+            console.error('Password change error:', error);
+            
+            let errorMessage = 'Failed to change password. Please try again.';
+            if (error.error?.message) {
+              errorMessage = error.error.message;
+            } else if (error.status === 401) {
+              errorMessage = 'Current password is incorrect.';
+            } else if (error.status === 400) {
+              errorMessage = 'Invalid password format.';
+            }
+            
+            this.snackBar.open(errorMessage, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
+    }
+  }
+
+
+  // Password match validation
+  passwordMatchValidator(form: FormGroup) {
+    const newPassword = form.get('newPassword');
+    const confirmPassword = form.get('confirmPassword');
+    
+    if (newPassword && confirmPassword && newPassword.value !== confirmPassword.value) {
+      confirmPassword.setErrors({ passwordMismatch: true });
+      return { passwordMismatch: true };
+    }
+    return null;
   }
 } 

@@ -53,8 +53,24 @@ export class TimesheetService {
   }
 
   // Get all timesheet entries (Admin/Supervisor only)
-  getAllEntries(): Observable<{ entries: TimesheetEntry[] }> {
-    return this.http.get<{ entries: TimesheetEntry[] }>(`${this.apiUrl}/all-entries`, {
+  getAllEntries(pagination: { page: number; limit: number } = { page: 1, limit: 50 }, filters: any = {}): Observable<{ entries: TimesheetEntry[]; total: number; page: number; limit: number; totalPages: number }> {
+    // Build query params
+    let params = `?page=${pagination.page}&limit=${pagination.limit}`;
+    
+    // Add filters
+    if (filters.department) params += `&department=${encodeURIComponent(filters.department)}`;
+    if (filters.userEmail) params += `&userEmail=${encodeURIComponent(filters.userEmail)}`;
+    if (filters.status) params += `&status=${encodeURIComponent(filters.status)}`;
+    if (filters.priority) params += `&priority=${encodeURIComponent(filters.priority)}`;
+    if (filters.dateFrom) params += `&dateFrom=${filters.dateFrom}`;
+    if (filters.dateTo) params += `&dateTo=${filters.dateTo}`;
+    if (filters.search) params += `&search=${encodeURIComponent(filters.search)}`;
+    if (filters.billable !== undefined) params += `&billable=${filters.billable}`;
+    
+    console.log('🔍 TimesheetService.getAllEntries - Full URL:', `${this.apiUrl}/all-entries${params}`);
+    console.log('🔍 TimesheetService.getAllEntries - Filters:', filters);
+    
+    return this.http.get<{ entries: TimesheetEntry[]; total: number; page: number; limit: number; totalPages: number }>(`${this.apiUrl}/all-entries${params}`, {
       headers: this.getHeaders()
     });
   }

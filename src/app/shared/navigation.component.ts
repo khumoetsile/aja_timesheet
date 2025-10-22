@@ -228,9 +228,9 @@ import { SettingsService } from '../services/settings.service';
         <div class="header-wrapper">
           <div class="header-inner">
             <div class="header-left">
-              <button mat-icon-button class="pc-head-link desktop-menu-toggle" (click)="toggleCollapse()" aria-label="Toggle navigation">
-                <mat-icon>menu</mat-icon>
-              </button>
+            <button mat-icon-button class="pc-head-link mobile-menu-toggle" (click)="toggleMobileMenu()" aria-label="Open navigation">
+              <mat-icon>menu</mat-icon>
+            </button>
               <div class="page-title">AJA</div>
             </div>
 
@@ -247,10 +247,6 @@ import { SettingsService } from '../services/settings.service';
                 <button mat-menu-item [routerLink]="getProfileRoute()"><mat-icon>person</mat-icon><span>Profile</span></button>
                 <button mat-menu-item (click)="logout()"><mat-icon>logout</mat-icon><span>Logout</span></button>
               </mat-menu>
-
-              <button mat-icon-button class="pc-head-link" (click)="toggleTheme()" [matTooltip]="isDarkTheme ? 'Switch to light theme' : 'Switch to dark theme'">
-                <mat-icon>{{ isDarkTheme ? 'light_mode' : 'dark_mode' }}</mat-icon>
-              </button>
             </div>
           </div>
         </div>
@@ -321,42 +317,32 @@ import { SettingsService } from '../services/settings.service';
 
     /* Sidebar Styles */
     .pc-sidebar {
-  background: linear-gradient(135deg, rgba(30,41,59,0.85) 0%, rgba(51,65,85,0.85) 100%);
-  box-shadow: 0 8px 32px 0 rgba(31, 41, 55, 0.18);
-  width: 260px;
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  z-index: 1026;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow-y: auto;
-  border-right: 1px solid rgba(255,255,255,0.08);
-  border-radius: 0;
-  backdrop-filter: blur(18px) saturate(180%);
-
-      &.navbar-collapsed {
-        width: 72px;
-
-        .pc-mtext,
-        .brand-text,
-        .profile-card {
-          display: none;
-        }
-
-        .pc-link {
-          justify-content: center;
-          padding: 16px 8px;
-        }
-
-        .pc-micon {
-          margin-right: 0;
-        }
-
-        .pc-caption {
-          display: none;
-        }
-      }
+      background: linear-gradient(135deg, rgba(30,41,59,0.85) 0%, rgba(51,65,85,0.85) 100%);
+      box-shadow: 0 8px 32px 0 rgba(31, 41, 55, 0.18);
+      width: 260px;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      z-index: 1026;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      border-radius: 0;
+      backdrop-filter: blur(18px) saturate(180%);
     }
+
+    /* Collapsed state (explicit selectors for reliability) */
+    .pc-sidebar.navbar-collapsed { width: 72px; }
+    .pc-sidebar.navbar-collapsed .pc-mtext,
+    .pc-sidebar.navbar-collapsed .brand-text,
+    .pc-sidebar.navbar-collapsed .profile-card { display: none; }
+    .pc-sidebar.navbar-collapsed .pc-link { justify-content: center; padding: 16px 8px; }
+    .pc-sidebar.navbar-collapsed .pc-micon { margin-right: 0; }
+    .pc-sidebar.navbar-collapsed .pc-caption { display: none; }
+    
+    /* Adjust header and main content for collapsed state */
+    .pc-sidebar.navbar-collapsed + .pc-header { left: 72px; }
+    .pc-sidebar.navbar-collapsed + .pc-header + .pc-main { margin-left: 72px; }
 
     .m-header {
       padding: 20px 16px 16px 16px;
@@ -427,16 +413,14 @@ import { SettingsService } from '../services/settings.service';
       }
     }
 
-    .navbar-content {
-      padding: 20px 0;
-    }
+    .navbar-content { padding: 12px 0; }
 
     .profile-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin: 18px 18px 22px 18px;
-  padding: 16px 14px;
+      gap: 12px;
+      margin: 12px 12px 16px 12px;
+      padding: 12px 12px;
   border-radius: 14px;
   background: linear-gradient(135deg, #334155 0%, #18181b 100%);
   border: 1px solid #334155;
@@ -445,15 +429,15 @@ import { SettingsService } from '../services/settings.service';
     }
 
     .profile-card .avatar {
-  width: 44px;
-  height: 44px;
+      width: 38px;
+      height: 38px;
   border-radius: 50%;
   background: linear-gradient(135deg, #38bdf8 0%, #6366f1 100%);
   display: grid;
   place-items: center;
   font-weight: 700;
   color: #fff;
-  font-size: 18px;
+      font-size: 16px;
   box-shadow: 0 4px 16px rgba(56,189,248,0.18);
     }
 
@@ -489,11 +473,11 @@ import { SettingsService } from '../services/settings.service';
 
     .pc-caption {
       color: #38bdf8;
-      padding: 18px 16px 8px 16px;
-      font-size: 10px;
+      padding: 12px 12px 6px 12px;
+      font-size: 9px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.3px;
       position: relative;
       label {
         display: block;
@@ -502,7 +486,7 @@ import { SettingsService } from '../services/settings.service';
         font-weight: 600;
       }
       span {
-        font-size: 9px;
+        font-size: 8.5px;
         color: #94a3b8;
         text-transform: capitalize;
         font-weight: 400;
@@ -521,15 +505,15 @@ import { SettingsService } from '../services/settings.service';
     .pc-link {
       display: flex;
       align-items: center;
-      padding: 14px 18px;
+      padding: 12px 14px;
       color: #f1f5f9;
       text-decoration: none;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 10px;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 500;
       position: relative;
-      margin: 4px 10px;
+      margin: 2px 8px;
       letter-spacing: 0.08px;
       &:hover {
         background: linear-gradient(90deg, #38bdf8 0%, #6366f1 100%);
@@ -607,9 +591,15 @@ import { SettingsService } from '../services/settings.service';
       position: fixed;
       left: 260px;
       right: 0;
-      z-index: 1025;
+      z-index: 1031; /* keep header above mobile overlay */
       border-bottom: 1px solid #e6eef6;
+      padding: 0.75rem 1.25rem;
     }
+
+    /* Align header/content with sidebar and its collapsed state */
+    nav.pc-sidebar + .pc-header + .pc-main { margin-left: 260px; }
+    nav.pc-sidebar.navbar-collapsed + .pc-header { left: 72px; }
+    nav.pc-sidebar.navbar-collapsed + .pc-header + .pc-main { margin-left: 72px; }
 
     /* Make header-wrapper align to the main content area (to the right of the sidebar) */
     .header-wrapper {
@@ -684,7 +674,7 @@ import { SettingsService } from '../services/settings.service';
   text-overflow: ellipsis;
     }
 
-  .header-right .user-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; display: inline-block; color: #0f172a; font-weight: 600; }
+  .header-right .user-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; display: inline-block; color: #0f172a; font-weight: 600; }
   .header-right .avatar-mini { margin-right: 8px; }
     .chevron-down {
   font-size: 20px;
@@ -730,14 +720,10 @@ import { SettingsService } from '../services/settings.service';
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       min-height: calc(100vh - 64px);
       background: #f8fafc;
-
-      .navbar-collapsed + .pc-header + & {
-        margin-left: 72px;
-      }
     }
 
     .pc-content {
-      padding: 24px;
+      padding: 1.5rem;
     }
 
     /* Mobile Overlay */
@@ -748,8 +734,72 @@ import { SettingsService } from '../services/settings.service';
       right: 0;
       bottom: 0;
       background: rgba(0, 0, 0, 0.5);
-      z-index: 1025;
+      z-index: 1025; /* below header */
       display: none;
+    }
+
+    /* Hide mobile toggle by default (desktop) */
+    .mobile-menu-toggle { display: none !important; }
+
+    /* Responsive Design for Smaller Laptops */
+    @media (max-width: 1366px) and (min-width: 1025px) {
+      .pc-sidebar {
+        width: 240px;
+      }
+      
+      .pc-header {
+        left: 240px;
+      }
+      
+      .pc-main {
+        margin-left: 240px;
+      }
+      
+      .pc-content {
+        padding: 20px;
+      }
+      
+      .pc-mtext {
+        font-size: 13px;
+      }
+      
+      .brand-name {
+        font-size: 16px;
+    }
+      
+      .profile-name {
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 1024px) and (min-width: 769px) {
+      .pc-sidebar {
+        width: 220px;
+      }
+      
+      .pc-header {
+        left: 220px;
+      }
+      
+      .pc-main {
+        margin-left: 220px;
+      }
+      
+      .pc-content {
+        padding: 18px;
+      }
+      
+      .pc-mtext {
+        font-size: 12px;
+      }
+      
+      .brand-name {
+        font-size: 15px;
+      }
+      
+      .profile-name {
+        font-size: 13px;
+      }
     }
 
     /* Responsive */

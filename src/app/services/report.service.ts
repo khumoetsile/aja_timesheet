@@ -199,7 +199,7 @@ export class ReportService {
           totalEntries: 0,
           totalHours: 0,
           billableHours: 0,
-          lastActivity: entry.date
+          lastActivity: entry.updated_at || entry.created_at || entry.date
         });
       }
 
@@ -211,18 +211,56 @@ export class ReportService {
           if (entry.billable) {
             user.billableHours += parseFloat(entry.total_hours?.toString() || '0') || 0;
           }
-          if (entry.date > user.lastActivity) {
-            user.lastActivity = entry.date;
+          // Use the most recent timestamp (created_at or updated_at) for last activity
+          const entryTimestamp = entry.updated_at || entry.created_at || entry.date;
+          const currentLastActivity = new Date(user.lastActivity);
+          const entryTimestampDate = new Date(entryTimestamp);
+          
+          // Debug logging to help identify the issue
+          if (userEmail && userEmail.includes('botlhale')) { // Debug for specific user
+            console.log('🔍 Last Activity Debug:', {
+              userEmail,
+              entryDate: entry.date,
+              entryCreated: entry.created_at,
+              entryUpdated: entry.updated_at,
+              entryTimestamp,
+              currentLastActivity: user.lastActivity,
+              entryTimestampDate: entryTimestampDate.toISOString(),
+              currentLastActivityDate: currentLastActivity.toISOString(),
+              isNewer: entryTimestampDate > currentLastActivity,
+              isValidEntryDate: !isNaN(entryTimestampDate.getTime()),
+              isValidCurrentDate: !isNaN(currentLastActivity.getTime())
+            });
+          }
+          
+          if (entryTimestampDate > currentLastActivity) {
+            user.lastActivity = entryTimestamp;
           }
         }
       }
     });
 
-    return Array.from(userMap.values()).map(user => ({
-      ...user,
-      averageHours: user.totalHours / user.totalEntries,
-      utilization: (user.totalHours / (user.totalEntries * 8)) * 100 // Assuming 8-hour workday
-    }));
+    return Array.from(userMap.values()).map(user => {
+      // Format the last activity date properly
+      let formattedLastActivity = user.lastActivity;
+      if (user.lastActivity) {
+        try {
+          const date = new Date(user.lastActivity);
+          if (!isNaN(date.getTime())) {
+            formattedLastActivity = date.toISOString();
+          }
+        } catch (error) {
+          console.warn('Invalid last activity date for user:', user.userEmail, user.lastActivity);
+        }
+      }
+      
+      return {
+        ...user,
+        lastActivity: formattedLastActivity,
+        averageHours: user.totalHours / user.totalEntries,
+        utilization: (user.totalHours / (user.totalEntries * 8)) * 100 // Assuming 8-hour workday
+      };
+    });
   }
 
   /**
@@ -458,7 +496,7 @@ export class ReportService {
                       ${entry.status === 'Completed' ? 'background:#e6f4ea; color:#166534;' : ''}
                       ${entry.status === 'CarriedOut' ? 'background:#fef3c7; color:#92400e;' : ''}
                       ${entry.status === 'NotStarted' ? 'background:#fee2e2; color:#991b1b;' : ''}
-                    ">${entry.status === 'CarriedOut' ? 'In Progress' : (entry.status === 'NotStarted' ? 'Not Started' : entry.status)}</span>
+                    ">${entry.status === 'CarriedOut' ? 'Ongoing' : (entry.status === 'NotStarted' ? 'Not Started' : entry.status)}</span>
                   </td>
                 </tr>
               `).join('')}

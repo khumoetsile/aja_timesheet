@@ -114,7 +114,7 @@ import { ReportLoadingDialogComponent } from './report-loading-dialog.component'
                 <mat-select formControlName="status">
                   <mat-option value="">All Statuses</mat-option>
                   <mat-option value="Completed">Completed</mat-option>
-                  <mat-option value="CarriedOut">Carried Out</mat-option>
+                  <mat-option value="CarriedOut">Ongoing</mat-option>
                   <mat-option value="NotStarted">Not Started</mat-option>
                 </mat-select>
               </mat-form-field>

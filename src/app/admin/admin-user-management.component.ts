@@ -21,6 +21,7 @@ import { Router } from '@angular/router';
 
 import { AuthService, User } from '../services/auth.service';
 import { UserDialogComponent } from './user-dialog.component';
+import { PasswordResetLoadingDialogComponent } from './password-reset-loading-dialog.component';
 
 interface UserManagementData {
   users: User[];
@@ -942,6 +943,60 @@ export class AdminUserManagementComponent implements OnInit {
   }
 
   resetPassword(user: User): void {
-    this.snackBar.open('Password reset functionality coming soon!', 'Close', { duration: 3000 });
+    // Show confirmation dialog
+    const confirmMessage = `Are you sure you want to reset the password for ${this.getUserFullName(user)}? A new password will be generated and sent to their email.`;
+    
+    if (confirm(confirmMessage)) {
+      // Open loading dialog
+      const loadingDialogRef = this.dialog.open(PasswordResetLoadingDialogComponent, {
+        width: '500px',
+        disableClose: true,
+        data: { userEmail: user.email }
+      });
+
+      const loadingComponent = loadingDialogRef.componentInstance;
+
+      // Step 1: Generate password
+      loadingComponent.updateProgress(1, 'Generating new password...', 'Creating secure password for user');
+      
+      // Simulate a small delay for better UX
+      setTimeout(() => {
+        // Step 2: Send email
+        loadingComponent.updateProgress(2, 'Sending email...', `Sending new password to ${user.email}`);
+        
+        this.authService.resetUserPassword(user.id).subscribe({
+          next: (response) => {
+            console.log('Password reset successful:', response);
+            
+            // Step 3: Complete
+            loadingComponent.updateProgress(3, 'Password reset complete!', 'New password has been generated and sent');
+            
+            // Show success after a brief delay
+            setTimeout(() => {
+              loadingComponent.showSuccess(`Password reset email sent to ${user.email}`);
+              
+              // Close dialog after showing success
+              setTimeout(() => {
+                loadingDialogRef.close();
+                this.snackBar.open(
+                  `Password reset successfully! New password sent to ${user.email}`, 
+                  'Close', 
+                  { duration: 5000 }
+                );
+              }, 2000);
+            }, 1000);
+          },
+          error: (error) => {
+            console.error('Password reset error:', error);
+            loadingComponent.showError('Failed to reset password: ' + (error.error?.message || error.message));
+            
+            // Close dialog after showing error
+            setTimeout(() => {
+              loadingDialogRef.close();
+            }, 3000);
+          }
+        });
+      }, 500);
+    }
   }
 } 

@@ -118,7 +118,7 @@ import { MatChipsModule } from '@angular/material/chips';
               <mat-select [(value)]="selectedStatus">
                 <mat-option value="all">All Statuses</mat-option>
                 <mat-option value="completed">Completed</mat-option>
-                <mat-option value="in-progress">In Progress</mat-option>
+                <mat-option value="in-progress">Ongoing</mat-option>
                 <mat-option value="not-started">Not Started</mat-option>
               </mat-select>
             </mat-form-field>

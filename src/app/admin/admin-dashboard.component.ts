@@ -1,11 +1,11 @@
-import { Component, OnInit, ViewChild, Input } from '@angular/core';
+import { Component, OnInit, ViewChild, Input, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSortModule } from '@angular/material/sort';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
+import { MatSortModule, MatSort } from '@angular/material/sort';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
@@ -28,39 +28,7 @@ import { TimesheetEntry } from '../timesheet/models/timesheet-entry.interface';
 import { ReportDialogComponent } from './report-dialog.component';
 import { ComplianceNotificationService } from './services/compliance-notification.service';
 import { TimesheetMonitoringService } from './services/timesheet-monitoring.service';
-
-interface DashboardMetrics {
-  totalEntries: number;
-  totalHours: number;
-  billableHours: number;
-  activeUsers: number; // Number of unique staff members with timesheet entries
-  departments: number;
-  averageHoursPerEntry: number;
-  pendingTimesheets: number; // Number of entries with 'NotStarted' status
-  tasksInProgress: number; // Number of entries with 'CarriedOut' status
-}
-
-interface DepartmentStats {
-  department: string;
-  totalEntries: number;
-  totalHours: number;
-  billableHours: number;
-  averageHours: number;
-  completionRate: number;
-  utilization: number;
-}
-
-interface UserStats {
-  userId: string;
-  userName: string;
-  userEmail: string;
-  totalEntries: number;
-  totalHours: number;
-  billableHours: number;
-  averageHours: number;
-  lastActivity: string;
-  utilization: number;
-}
+import { AnalyticsService, DashboardMetrics, DepartmentStats, UserStats } from './services/analytics.service';
 
 interface ChartDataPoint {
   label: string;
@@ -122,7 +90,7 @@ interface ChartDataPoint {
 
       <!-- Filters Section -->
       <div class="filters-section">
-        <div class="filter-row">
+        <div class="filter-row" [formGroup]="dateRange">
           <mat-form-field appearance="outline" class="filter-field" *ngIf="isAdmin">
             <mat-label>Department</mat-label>
             <input type="text" matInput [matAutocomplete]="deptAuto" 
@@ -153,7 +121,7 @@ interface ChartDataPoint {
 
           <mat-form-field appearance="outline" class="filter-field">
             <mat-label>Start Date</mat-label>
-            <input matInput [matDatepicker]="startPicker" placeholder="Start date" formControlName="start">
+            <input matInput [matDatepicker]="startPicker" placeholder="Start date" formControlName="start" (dateChange)="onDateChange()">
             <mat-datepicker-toggle matSuffix [for]="startPicker">
               <mat-icon>calendar_today</mat-icon>
             </mat-datepicker-toggle>
@@ -162,7 +130,7 @@ interface ChartDataPoint {
 
           <mat-form-field appearance="outline" class="filter-field">
             <mat-label>End Date</mat-label>
-            <input matInput [matDatepicker]="endPicker" placeholder="End date" formControlName="end">
+            <input matInput [matDatepicker]="endPicker" placeholder="End date" formControlName="end" (dateChange)="onDateChange()">
             <mat-datepicker-toggle matSuffix [for]="endPicker">
               <mat-icon>calendar_today</mat-icon>
             </mat-datepicker-toggle>
@@ -174,7 +142,7 @@ interface ChartDataPoint {
             <mat-select [(value)]="selectedStatus" (selectionChange)="applyFilters()">
               <mat-option value="">All Statuses</mat-option>
               <mat-option value="Completed">Completed</mat-option>
-              <mat-option value="CarriedOut">Carried Out</mat-option>
+              <mat-option value="CarriedOut">Ongoing</mat-option>
               <mat-option value="NotStarted">Not Started</mat-option>
             </mat-select>
             <mat-select-trigger>
@@ -237,7 +205,7 @@ interface ChartDataPoint {
             <mat-icon>schedule</mat-icon>
           </div>
           <div class="metric-content">
-            <h3>{{metrics.pendingTimesheets}}</h3>
+            <h3>{{metrics.notStartedTasks}}</h3>
             <p>Not Started Tasks</p>
           </div>
         </div>
@@ -247,7 +215,7 @@ interface ChartDataPoint {
             <mat-icon>trending_up</mat-icon>
           </div>
           <div class="metric-content">
-            <h3>{{metrics.tasksInProgress}}</h3>
+            <h3>{{metrics.carriedOutTasks}}</h3>
             <p>Carried Out Tasks</p>
           </div>
         </div>
@@ -340,7 +308,7 @@ interface ChartDataPoint {
         <div class="table-card" *ngIf="isAdmin">
           <h3>Department Performance</h3>
         <div class="table-container">
-          <table mat-table [dataSource]="departmentStats" matSort class="analytics-table">
+          <table mat-table [dataSource]="departmentDataSource" matSort class="analytics-table">
             <ng-container matColumnDef="department">
               <th mat-header-cell *matHeaderCellDef mat-sort-header>Department</th>
               <td mat-cell *matCellDef="let element">{{element.department}}</td>
@@ -382,6 +350,12 @@ interface ChartDataPoint {
             <tr mat-header-row *matHeaderRowDef="departmentColumns"></tr>
             <tr mat-row *matRowDef="let row; columns: departmentColumns;" class="dashboard-row clickable" (click)="goToReportDetail({ department: row.department })"></tr>
           </table>
+          <mat-paginator #deptPaginator
+            [pageSizeOptions]="[5, 10, 25]"
+            [pageSize]="5"
+            showFirstLastButtons
+            aria-label="Select page of departments">
+          </mat-paginator>
         </div>
       </div>
 
@@ -389,7 +363,7 @@ interface ChartDataPoint {
         <div class="table-card">
           <h3>{{ isAdmin ? 'User Performance' : 'Team Performance' }}</h3>
         <div class="table-container">
-          <table mat-table [dataSource]="userStats" matSort class="analytics-table">
+          <table mat-table [dataSource]="userDataSource" matSort class="analytics-table">
             <ng-container matColumnDef="userName">
               <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ isAdmin ? 'User' : 'Team Member' }}</th>
               <td mat-cell *matCellDef="let element">{{element.userName}}</td>
@@ -427,6 +401,12 @@ interface ChartDataPoint {
             <tr mat-header-row *matHeaderRowDef="userColumns"></tr>
             <tr mat-row *matRowDef="let row; columns: userColumns;" class="dashboard-row clickable" (click)="goToReportDetail({ userEmail: row.userEmail })"></tr>
           </table>
+          <mat-paginator #userPaginator
+            [pageSizeOptions]="[5, 10, 25]"
+            [pageSize]="5"
+            showFirstLastButtons
+            aria-label="Select page of users">
+          </mat-paginator>
           </div>
         </div>
       </div>
@@ -734,8 +714,39 @@ interface ChartDataPoint {
     .priority-low { background: #f3f4f6 !important; color: #374151 !important; border: 1px solid #e5e7eb !important; border-radius: 9999px; padding: 4px 10px; font-weight: 600; }
 
     .utilization-low {
-      background: var(--aja-orange) !important;
-      color: var(--aja-white) !important;
+      background: #fef3c7 !important;
+      color: #92400e !important;
+      border: 1px solid #fbbf24 !important;
+    }
+
+    .utilization-medium {
+      background: #dbeafe !important;
+      color: #1e40af !important;
+      border: 1px solid #60a5fa !important;
+    }
+
+    .utilization-high {
+      background: #d1fae5 !important;
+      color: #065f46 !important;
+      border: 1px solid #34d399 !important;
+    }
+
+    .completion-low {
+      background: #fee2e2 !important;
+      color: #991b1b !important;
+      border: 1px solid #fca5a5 !important;
+    }
+
+    .completion-medium {
+      background: #fef3c7 !important;
+      color: #92400e !important;
+      border: 1px solid #fbbf24 !important;
+    }
+
+    .completion-high {
+      background: #d1fae5 !important;
+      color: #065f46 !important;
+      border: 1px solid #34d399 !important;
     }
 
     /* Responsive Design */
@@ -781,8 +792,11 @@ interface ChartDataPoint {
     }
   `]
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnInit, AfterViewInit {
   @ViewChild(BaseChartDirective) chart!: BaseChartDirective;
+  @ViewChild('deptPaginator') deptPaginator!: MatPaginator;
+  @ViewChild('userPaginator') userPaginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
   
   // Input properties to make this component reusable
   @Input() userRole: 'ADMIN' | 'SUPERVISOR' = 'ADMIN';
@@ -809,8 +823,9 @@ export class AdminDashboardComponent implements OnInit {
     activeUsers: 0,
     departments: 0,
     averageHoursPerEntry: 0,
-    pendingTimesheets: 0,
-    tasksInProgress: 0
+    notStartedTasks: 0,
+    carriedOutTasks: 0,
+    completedTasks: 0
   };
 
   entries: TimesheetEntry[] = [];
@@ -824,6 +839,10 @@ export class AdminDashboardComponent implements OnInit {
   filteredDepartments: string[] = [];
   filteredEmployees: UserStats[] = [];
   dateRange: FormGroup;
+
+  // Data sources for tables with pagination
+  departmentDataSource = new MatTableDataSource<DepartmentStats>([]);
+  userDataSource = new MatTableDataSource<UserStats>([]);
 
   departmentColumns: string[] = ['department', 'totalEntries', 'totalHours', 'billableHours', 'utilization', 'completionRate'];
   userColumns: string[] = ['userName', 'userEmail', 'totalEntries', 'totalHours', 'utilization', 'lastActivity'];
@@ -1001,6 +1020,7 @@ export class AdminDashboardComponent implements OnInit {
   constructor(
     private timesheetService: TimesheetService,
     private authService: AuthService,
+    private analyticsService: AnalyticsService,
     private snackBar: MatSnackBar,
     private fb: FormBuilder,
     private router: Router,
@@ -1020,56 +1040,88 @@ export class AdminDashboardComponent implements OnInit {
       this.selectedDepartment = this.userDepartment;
     }
     
+    // Watch for date range changes and auto-apply filters
+    this.dateRange.valueChanges.subscribe(value => {
+      console.log('📅 Date range changed (valueChanges):', value);
+      if (value.start && value.end) {
+        console.log('  → Both dates selected, auto-applying filters in 300ms');
+        // Small delay to allow for manual date typing
+        setTimeout(() => {
+          if (this.dateRange.value.start && this.dateRange.value.end) {
+            this.applyFilters();
+          }
+        }, 300);
+      }
+    });
+    
     this.loadDashboardData();
     this.timesheetMonitoringService.compliance$.subscribe(compliance => {
       this.notificationService.generateComplianceAlerts(compliance);
     });
   }
 
+  ngAfterViewInit(): void {
+    // Connect paginators and sort to data sources
+    this.departmentDataSource.paginator = this.deptPaginator;
+    this.userDataSource.paginator = this.userPaginator;
+    this.departmentDataSource.sort = this.sort;
+    this.userDataSource.sort = this.sort;
+  }
+
   loadDashboardData(): void {
-    console.log('🔄 Loading admin dashboard data...');
+    console.log('🔄 Loading optimized dashboard metrics (NO entries loaded to frontend)...');
     
-    // Build base filters - for supervisors, always filter by department
-    const baseFilters: any = {};
+    // Build filters
+    const filters: any = {};
     if (this.userRole === 'SUPERVISOR' && this.userDepartment) {
-      baseFilters.department = this.userDepartment;
+      filters.department = this.userDepartment;
     }
     
-    // Load entries with base filters
-    this.timesheetService.getAllEntries({ page: 1, limit: 1000 }, baseFilters).subscribe({
-      next: (response: any) => {
-        console.log('✅ Admin dashboard data loaded:', response);
-        const entries = response.entries || [];
+    // Use optimized backend endpoint - calculates everything in SQL
+    this.analyticsService.getDashboardMetrics(filters).subscribe({
+      next: (response) => {
+        console.log('✅ Dashboard metrics loaded from backend:', response);
         
-        if (entries.length === 0) {
-          console.log('📊 No timesheet entries found');
-          this.entries = [];
-          this.calculateMetrics([]);
-          this.calculateDepartmentStats([]);
-          this.calculateUserStats([]);
-          this.extractDepartments([]);
-          this.updateCharts([]);
-          this.snackBar.open('No timesheet data found. Start by creating timesheet entries.', 'Close', { duration: 5000 });
-        } else {
-          console.log('📊 Processing', entries.length, 'timesheet entries');
-          this.entries = entries;
-          this.calculateMetrics(entries);
-          this.calculateDepartmentStats(entries);
-          this.calculateUserStats(entries);
-          this.extractDepartments(entries);
-          this.updateCharts(entries);
-          this.snackBar.open(`Loaded ${entries.length} timesheet entries`, 'Close', { duration: 3000 });
-        }
+        // Update metrics directly from backend
+        this.metrics = response.metrics;
+        
+        // Update department stats
+        this.departmentStats = response.departmentStats;
+        this.departmentDataSource.data = this.departmentStats;
+        
+        // Update user stats
+        this.userStats = response.userStats;
+        this.userDataSource.data = this.userStats;
+        
+        // Extract departments for filters
+        this.departments = response.departmentStats.map(d => d.department);
+        this.filteredDepartments = [...this.departments];
+        
+        // Load limited entries for charts (only need 1000 for visualization)
+        this.loadChartData(filters);
+        
+        this.snackBar.open(`Dashboard loaded: ${response.metrics.totalEntries} entries`, 'Close', { duration: 2000 });
       },
       error: (error) => {
-        console.error('❌ Error loading admin dashboard data:', error);
-        this.entries = [];
-        this.calculateMetrics([]);
-        this.calculateDepartmentStats([]);
-        this.calculateUserStats([]);
-        this.extractDepartments([]);
-        this.updateCharts([]);
-        this.snackBar.open('Error loading data. Please try again.', 'Close', { duration: 5000 });
+        console.error('❌ Error loading dashboard metrics:', error);
+        this.snackBar.open('Error loading dashboard. Please try again.', 'Close', { duration: 5000 });
+      }
+    });
+  }
+  
+  loadChartData(filters: any): void {
+    console.log('📊 Loading ALL chart data for complete visualization...');
+    
+    // Load ALL entries for complete chart visualization
+    this.timesheetService.getAllEntries({ page: 1, limit: 100000 }, filters).subscribe({
+      next: (response: any) => {
+        const entries = response.entries || [];
+        console.log('📊 Chart data loaded:', entries.length, 'entries');
+        this.entries = entries;
+        this.updateCharts(entries);
+      },
+      error: (error) => {
+        console.error('❌ Error loading chart data:', error);
       }
     });
   }
@@ -1197,8 +1249,9 @@ export class AdminDashboardComponent implements OnInit {
       activeUsers: uniqueUsers.size, // Count of unique staff members who have timesheet entries
       departments: uniqueDepartments.size,
       averageHoursPerEntry: entries.length > 0 ? totalHours / entries.length : 0,
-      pendingTimesheets: entries.filter(entry => entry.status === 'NotStarted').length, // Tasks that haven't started yet
-      tasksInProgress: entries.filter(entry => entry.status === 'CarriedOut').length // Tasks currently being worked on
+      notStartedTasks: entries.filter(entry => entry.status === 'NotStarted').length,
+      carriedOutTasks: entries.filter(entry => entry.status === 'CarriedOut').length,
+      completedTasks: entries.filter(entry => entry.status === 'Completed').length
     };
 
     console.log('📊 Calculated metrics:', this.metrics);
@@ -1239,6 +1292,7 @@ export class AdminDashboardComponent implements OnInit {
     });
 
     this.departmentStats = Array.from(departmentMap.values());
+    this.departmentDataSource.data = this.departmentStats;
   }
 
   calculateUserStats(entries: TimesheetEntry[]): void {
@@ -1256,7 +1310,7 @@ export class AdminDashboardComponent implements OnInit {
           totalHours: 0,
           billableHours: 0,
           averageHours: 0,
-          lastActivity: entry.date,
+          lastActivity: entry.updated_at || entry.created_at || entry.date,
           utilization: 0
         });
       }
@@ -1269,8 +1323,10 @@ export class AdminDashboardComponent implements OnInit {
       if (entry.billable) {
         stats.billableHours += hours;
       }
-      if (new Date(entry.date) > new Date(stats.lastActivity)) {
-        stats.lastActivity = entry.date;
+      // Use the most recent timestamp for last activity
+      const entryTimestamp = entry.updated_at || entry.created_at || entry.date;
+      if (new Date(entryTimestamp) > new Date(stats.lastActivity)) {
+        stats.lastActivity = entryTimestamp;
       }
     });
 
@@ -1282,6 +1338,7 @@ export class AdminDashboardComponent implements OnInit {
 
     this.userStats = Array.from(userMap.values());
     this.filteredEmployees = [...this.userStats];
+    this.userDataSource.data = this.userStats;
     
     console.log('👥 Debug - User stats calculated:', this.userStats);
   }
@@ -1292,9 +1349,10 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   updateCharts(entries: TimesheetEntry[]): void {
-    console.log('🔄 Updating charts with filtered entries:', entries.length, 'entries');
-    console.log('📊 Filtered departments:', [...new Set(entries.map(e => e.department))]);
-    console.log('👥 Filtered employees:', [...new Set(entries.map(e => e.user_email))]);
+    console.log('📊 Updating ALL charts with', entries.length, 'filtered entries');
+    console.log('  → Departments:', [...new Set(entries.map(e => e.department))].length);
+    console.log('  → Users:', [...new Set(entries.map(e => e.user_email))].length);
+    console.log('  → Date range:', entries.length > 0 ? `${entries[0]?.date} to ${entries[entries.length - 1]?.date}` : 'No data');
     
     this.updateTaskCompletionChart(entries);
     this.updateDepartmentUtilizationChart(entries);
@@ -1304,6 +1362,8 @@ export class AdminDashboardComponent implements OnInit {
     this.updateMonthlyUtilizationChart(entries);
     this.updateBillableDistributionChart(entries);
     this.updateEmployeeUtilizationChart(entries);
+    
+    console.log('✅ All 8 charts updated successfully');
   }
 
   updateTaskCompletionChart(entries: TimesheetEntry[]): void {
@@ -1314,7 +1374,7 @@ export class AdminDashboardComponent implements OnInit {
     console.log('Task completion chart - Departments:', departments);
     
     this.taskCompletionChartData = {
-      labels: statuses.map(s => s === 'CarriedOut' ? 'Carried Out' : s === 'NotStarted' ? 'Not Started' : s),
+      labels: statuses.map(s => s === 'CarriedOut' ? 'Ongoing' : s === 'NotStarted' ? 'Not Started' : s),
       datasets: departments.map((dept, index) => ({
         label: dept,
         data: statuses.map(status => 
@@ -1424,7 +1484,7 @@ export class AdminDashboardComponent implements OnInit {
     });
 
     this.statusCompletionChartData = {
-      labels: statuses.map(s => s === 'CarriedOut' ? 'Carried Out' : s === 'NotStarted' ? 'Not Started' : s),
+      labels: statuses.map(s => s === 'CarriedOut' ? 'Ongoing' : s === 'NotStarted' ? 'Not Started' : s),
       datasets: [{
         data: completionRates,
         backgroundColor: ['#90EE90', '#FFFFE0', '#FFA500'],
@@ -1547,35 +1607,65 @@ export class AdminDashboardComponent implements OnInit {
     }
     
     if (this.dateRange.value.start && this.dateRange.value.end) {
-      filters.dateFrom = this.dateRange.value.start.toISOString().split('T')[0];
-      filters.dateTo = this.dateRange.value.end.toISOString().split('T')[0];
+      // Use local date formatting to avoid timezone issues
+      const startDate = this.dateRange.value.start;
+      const endDate = this.dateRange.value.end;
+      
+      filters.dateFrom = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+      filters.dateTo = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+      
+      console.log('📅 Date filter applied (local timezone):');
+      console.log('  → Start:', this.dateRange.value.start, '→', filters.dateFrom);
+      console.log('  → End:', this.dateRange.value.end, '→', filters.dateTo);
+      console.log('  → Full filters object:', filters);
+    } else {
+      console.log('⚠️ No date range selected - showing all data');
+      console.log('  → Start value:', this.dateRange.value.start);
+      console.log('  → End value:', this.dateRange.value.end);
     }
     
-    // Reload data with filters
-    console.log('🔍 Sending filters to API:', filters);
-    this.timesheetService.getAllEntries({ page: 1, limit: 1000 }, filters).subscribe({
-      next: (response: any) => {
-        const entries = response.entries || [];
-        console.log('✅ Filtered data loaded:', entries.length, 'entries');
-        console.log('📊 Sample entries:', entries.slice(0, 3));
+    // Use optimized backend endpoint - NO entries loaded for metrics
+    console.log('🔍 Applying filters with optimized backend:', filters);
+    this.analyticsService.getDashboardMetrics(filters).subscribe({
+      next: (response) => {
+        console.log('✅ Filtered metrics loaded:', response);
         
-        this.entries = entries;
-        this.calculateMetrics(entries);
-        this.calculateDepartmentStats(entries);
-        this.calculateUserStats(entries);
-        this.extractDepartments(entries);
-        this.updateCharts(entries);
+        // Update metrics directly from backend
+        this.metrics = response.metrics;
         
-        console.log('📈 Updated departmentStats:', this.departmentStats);
-        console.log('👥 Updated userStats:', this.userStats);
+        // Update department stats
+        this.departmentStats = response.departmentStats;
+        this.departmentDataSource.data = this.departmentStats;
         
-        this.snackBar.open(`Filtered: ${entries.length} entries`, 'Close', { duration: 2000 });
+        // Update user stats
+        this.userStats = response.userStats;
+        this.userDataSource.data = this.userStats;
+        
+        // Update departments list
+        this.departments = response.departmentStats.map(d => d.department);
+        this.filteredDepartments = [...this.departments];
+        
+        // Load limited entries for charts
+        this.loadChartData(filters);
+        
+        this.snackBar.open(`Filtered: ${response.metrics.totalEntries} entries`, 'Close', { duration: 2000 });
       },
       error: (error) => {
         console.error('❌ Error applying filters:', error);
         this.snackBar.open('Error applying filters', 'Close', { duration: 3000 });
       }
     });
+  }
+
+  onDateChange(): void {
+    console.log('📅 Date changed:', {
+      start: this.dateRange.value.start,
+      end: this.dateRange.value.end
+    });
+    // Auto-apply filters when both dates are selected
+    if (this.dateRange.value.start && this.dateRange.value.end) {
+      this.applyFilters();
+    }
   }
 
   clearFilters(): void {
@@ -1636,7 +1726,7 @@ export class AdminDashboardComponent implements OnInit {
   getStatusDisplayName(status: string): string {
     switch (status) {
       case 'Completed': return 'Completed';
-      case 'CarriedOut': return 'Carried Out';
+      case 'CarriedOut': return 'Ongoing';
       case 'NotStarted': return 'Not Started';
       default: return status;
     }
@@ -1685,8 +1775,12 @@ export class AdminDashboardComponent implements OnInit {
     if (filters.status) queryParams.status = filters.status;
     if (filters.billable !== undefined) queryParams.billable = filters.billable;
     if (this.dateRange.value.start && this.dateRange.value.end) {
-      queryParams.dateFrom = this.dateRange.value.start.toISOString().split('T')[0];
-      queryParams.dateTo = this.dateRange.value.end.toISOString().split('T')[0];
+      // Use local date formatting to avoid timezone issues
+      const startDate = this.dateRange.value.start;
+      const endDate = this.dateRange.value.end;
+      
+      queryParams.dateFrom = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+      queryParams.dateTo = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
     }
     const route = this.isAdmin ? '/admin/reports/detail' : '/supervisor/reports/detail';
     this.router.navigate([route], { queryParams });
