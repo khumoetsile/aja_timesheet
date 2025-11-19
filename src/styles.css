@@ -825,7 +825,51 @@ p {
 
 .mat-mdc-snack-bar-container {
   font-size: 13px !important;
-} 
+}
+
+/* Custom Snackbar Styles for Success and Error Messages */
+.success-snackbar {
+  background-color: #10b981 !important;
+  color: white !important;
+}
+
+.success-snackbar .mat-mdc-snack-bar-action {
+  color: white !important;
+}
+
+.error-snackbar {
+  background-color: #ef4444 !important;
+  color: white !important;
+}
+
+.error-snackbar .mat-mdc-snack-bar-action {
+  color: white !important;
+}
+
+/* Ensure snackbars appear above dialogs */
+.cdk-overlay-container {
+  z-index: 10000 !important;
+}
+
+/* Snackbar overlay should be above dialog overlay */
+.cdk-overlay-pane:has(.mat-mdc-snack-bar-container) {
+  z-index: 10001 !important;
+}
+
+.mat-mdc-snack-bar-container {
+  z-index: 10001 !important;
+  position: relative !important;
+}
+
+/* More specific selector for snackbar in overlay */
+.cdk-overlay-container .mat-mdc-snack-bar-container {
+  z-index: 10001 !important;
+}
+
+/* Ensure snackbar appears above dialog backdrop */
+.cdk-overlay-pane[data-overlay-id*="snack"] {
+  z-index: 10001 !important;
+}
 
 /* Responsive Design for All Screen Sizes */
 

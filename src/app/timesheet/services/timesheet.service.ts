@@ -130,8 +130,8 @@ export class TimesheetService {
     });
   }
 
-  createEntry(entry: TimesheetEntry): Observable<{ message: string; entry: TimesheetEntry }> {
-    return this.http.post<{ message: string; entry: TimesheetEntry }>(`${this.apiUrl}/entries`, entry, {
+  createEntry(entry: TimesheetEntry): Observable<{ message: string; entry: TimesheetEntry; totalEntries?: number }> {
+    return this.http.post<{ message: string; entry: TimesheetEntry; totalEntries?: number }>(`${this.apiUrl}/entries`, entry, {
       headers: this.authService.getAuthHeaders()
     });
   }

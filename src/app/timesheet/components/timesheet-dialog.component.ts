@@ -12,6 +12,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 
 import { TimesheetEntry } from '../models/timesheet-entry.interface';
@@ -62,6 +63,7 @@ function timeToMinutes(time: string): number {
     MatChipsModule,
     MatIconModule,
     MatTooltipModule,
+    MatSnackBarModule,
     FormsModule
   ],
   template: `
@@ -522,6 +524,7 @@ export class TimesheetDialogComponent implements OnInit {
     private timesheetService: TimesheetService,
     private authService: AuthService,
     private dialogRef: MatDialogRef<TimesheetDialogComponent>,
+    private snackBar: MatSnackBar,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {
     this.dialogData = data;
@@ -717,6 +720,23 @@ export class TimesheetDialogComponent implements OnInit {
     return status === 'Completed' && hours === 0;
   }
 
+  private getFieldDisplayName(fieldName: string): string {
+    const fieldNames: { [key: string]: string } = {
+      'date': 'Date',
+      'clientFileNumber': 'Client File Number',
+      'department': 'Department',
+      'task': 'Task',
+      'activity': 'Activity',
+      'priority': 'Priority',
+      'startTime': 'Start Time',
+      'endTime': 'End Time',
+      'status': 'Status',
+      'billable': 'Billable',
+      'comments': 'Comments'
+    };
+    return fieldNames[fieldName] || fieldName;
+  }
+
   onSubmit(): void {
     console.log('🔍 Form submission started');
     console.log('Form valid:', this.form.valid);
@@ -765,19 +785,171 @@ export class TimesheetDialogComponent implements OnInit {
         this.timesheetService.updateEntry(this.dialogData.entry.id!, entry).subscribe({
           next: (response) => {
             console.log('✅ Entry updated successfully:', response);
+            this.snackBar.open(
+              'Timesheet entry updated successfully!',
+              'Close',
+              {
+                duration: 4000,
+                horizontalPosition: 'center',
+                verticalPosition: 'top',
+                panelClass: ['success-snackbar']
+              }
+            );
             this.dialogRef.close(true);
           },
           error: (error) => {
             console.error('❌ Error updating entry:', error);
             console.error('Error details:', error.error);
-            // You might want to show an error message to the user here
+            
+            // Extract error message from response - handle multiple possible structures
+            let errorMessage = 'Failed to update timesheet entry. Please try again.';
+            let overlappingEntry = null;
+            
+            if (error.error) {
+              // Check for overlapping entry details
+              if (error.error.overlappingEntry) {
+                overlappingEntry = error.error.overlappingEntry;
+              }
+              
+              // Try different error message locations
+              if (typeof error.error === 'string') {
+                errorMessage = error.error;
+              } else if (error.error.error) {
+                // Backend returns { error: 'message' }
+                errorMessage = error.error.error;
+              } else if (error.error.message) {
+                errorMessage = error.error.message;
+              } else if (error.error.details && Array.isArray(error.error.details)) {
+                // Handle validation errors array from express-validator
+                errorMessage = error.error.details.map((e: any) => e.msg || e.message || e).join(', ');
+              } else if (Array.isArray(error.error.errors)) {
+                // Handle validation errors array
+                errorMessage = error.error.errors.map((e: any) => e.msg || e.message || e).join(', ');
+              } else if (error.error.errors && typeof error.error.errors === 'object') {
+                // Handle nested errors object
+                const errorValues = Object.values(error.error.errors).map((e: any) => e.msg || e.message || e);
+                errorMessage = errorValues.join(', ');
+              }
+            } else if (error.message) {
+              errorMessage = error.message;
+            }
+            
+            // Format error message with overlap details if available
+            if (overlappingEntry && errorMessage.includes('overlaps')) {
+              const date = new Date(overlappingEntry.date).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              });
+              const timeRange = `${overlappingEntry.start_time} - ${overlappingEntry.end_time}`;
+              const clientInfo = overlappingEntry.client_file_number ? ` (${overlappingEntry.client_file_number})` : '';
+              const taskInfo = overlappingEntry.task || 'N/A';
+              
+              errorMessage = `Time entry overlaps with existing entry: ${date} ${timeRange}${clientInfo} - ${taskInfo}`;
+              
+              // Add activity if available and not too long
+              if (overlappingEntry.activity && overlappingEntry.activity.length <= 50) {
+                errorMessage += ` - ${overlappingEntry.activity}`;
+              }
+            }
+            
+            // Handle specific error cases
+            if (error.status === 400) {
+              // Keep the extracted message if we have one, otherwise use default
+              if (errorMessage === 'Failed to update timesheet entry. Please try again.') {
+                errorMessage = 'Invalid data. Please check your input and try again.';
+              }
+            } else if (error.status === 401) {
+              errorMessage = 'Your session has expired. Please log in again.';
+            } else if (error.status === 403) {
+              errorMessage = 'You do not have permission to update this entry.';
+            } else if (error.status === 404) {
+              errorMessage = 'Timesheet entry not found. It may have been deleted.';
+            } else if (error.status === 500) {
+              errorMessage = 'Server error. Please try again later or contact support.';
+            } else if (error.status === 0 || error.status === undefined) {
+              errorMessage = 'Network error. Please check your connection and try again.';
+            }
+            
+            // Always show the error message - use setTimeout to ensure it appears after any dialog animations
+            setTimeout(() => {
+              const snackBarRef = this.snackBar.open(
+                errorMessage,
+                'Close',
+                {
+                  duration: 8000, // Longer duration for overlap messages
+                  horizontalPosition: 'center',
+                  verticalPosition: 'top',
+                  panelClass: ['error-snackbar']
+                }
+              );
+              
+              // Ensure snackbar appears above dialog by setting z-index on the overlay pane
+              snackBarRef.afterOpened().subscribe(() => {
+                // Find the snackbar container
+                const snackbarElement = document.querySelector('.mat-mdc-snack-bar-container');
+                if (snackbarElement) {
+                  (snackbarElement as HTMLElement).style.zIndex = '10001';
+                  // Also set z-index on parent overlay pane
+                  const overlayPane = snackbarElement.closest('.cdk-overlay-pane');
+                  if (overlayPane) {
+                    (overlayPane as HTMLElement).style.zIndex = '10001';
+                  }
+                }
+              });
+            }, 100);
           }
         });
       } else {
         console.log('➕ Creating new entry...');
         this.timesheetService.createEntry(entry).subscribe({
-          next: (response) => {
+          next: (response: { message: string; entry: TimesheetEntry; totalEntries?: number }) => {
             console.log('✅ Entry created successfully:', response);
+            
+            const totalEntries = response.totalEntries || 0;
+            const isMilestone = totalEntries > 0 && totalEntries % 10 === 0;
+            
+            // Show success message
+            this.snackBar.open(
+              'Timesheet entry created successfully!',
+              'Close',
+              {
+                duration: 4000,
+                horizontalPosition: 'center',
+                verticalPosition: 'top',
+                panelClass: ['success-snackbar']
+              }
+            );
+            
+            // Show encouragement message for milestones
+            if (isMilestone) {
+              setTimeout(() => {
+                const encouragementMessages = [
+                  `🎉 Amazing! You've logged ${totalEntries} entries! Keep up the excellent work!`,
+                  `🌟 Fantastic milestone! ${totalEntries} entries logged. Your dedication is inspiring!`,
+                  `🚀 Outstanding achievement! ${totalEntries} entries completed. You're making great progress!`,
+                  `✨ Congratulations! ${totalEntries} entries logged. Your consistency is commendable!`,
+                  `💪 Excellent work! ${totalEntries} entries completed. You're on a roll!`,
+                  `🏆 Incredible milestone! ${totalEntries} entries logged. Your commitment shines through!`,
+                  `⭐ Outstanding! ${totalEntries} entries completed. Your professionalism is impressive!`,
+                  `🎊 Fantastic achievement! ${totalEntries} entries logged. Keep up the momentum!`
+                ];
+                
+                const randomMessage = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)];
+                
+                this.snackBar.open(
+                  randomMessage,
+                  'Close',
+                  {
+                    duration: 6000,
+                    horizontalPosition: 'center',
+                    verticalPosition: 'top',
+                    panelClass: ['success-snackbar']
+                  }
+                );
+              }, 500);
+            }
+            
             // Persist last end time & last selected values for better defaults
             try {
               localStorage.setItem('ts_last_end_time', formValue.endTime);
@@ -790,19 +962,144 @@ export class TimesheetDialogComponent implements OnInit {
             console.error('❌ Error creating entry:', error);
             console.error('Error details:', error.error);
             console.error('Error status:', error.status);
-            // You might want to show an error message to the user here
+            
+            // Extract error message from response - handle multiple possible structures
+            let errorMessage = 'Failed to create timesheet entry. Please try again.';
+            let overlappingEntry = null;
+            
+            if (error.error) {
+              // Check for overlapping entry details
+              if (error.error.overlappingEntry) {
+                overlappingEntry = error.error.overlappingEntry;
+              }
+              
+              // Try different error message locations
+              if (typeof error.error === 'string') {
+                errorMessage = error.error;
+              } else if (error.error.error) {
+                // Backend returns { error: 'message' } - this is the most common format
+                errorMessage = error.error.error;
+              } else if (error.error.message) {
+                errorMessage = error.error.message;
+              } else if (error.error.details && Array.isArray(error.error.details)) {
+                // Handle validation errors array from express-validator
+                errorMessage = error.error.details.map((e: any) => e.msg || e.message || e).join(', ');
+              } else if (Array.isArray(error.error.errors)) {
+                // Handle validation errors array
+                errorMessage = error.error.errors.map((e: any) => e.msg || e.message || e).join(', ');
+              } else if (error.error.errors && typeof error.error.errors === 'object') {
+                // Handle nested errors object
+                const errorValues = Object.values(error.error.errors).map((e: any) => e.msg || e.message || e);
+                errorMessage = errorValues.join(', ');
+              }
+            } else if (error.message) {
+              errorMessage = error.message;
+            }
+            
+            // Format error message with overlap details if available
+            if (overlappingEntry && errorMessage.includes('overlaps')) {
+              const date = new Date(overlappingEntry.date).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              });
+              const timeRange = `${overlappingEntry.start_time} - ${overlappingEntry.end_time}`;
+              const clientInfo = overlappingEntry.client_file_number ? ` (${overlappingEntry.client_file_number})` : '';
+              const taskInfo = overlappingEntry.task || 'N/A';
+              
+              errorMessage = `Time entry overlaps with existing entry: ${date} ${timeRange}${clientInfo} - ${taskInfo}`;
+              
+              // Add activity if available and not too long
+              if (overlappingEntry.activity && overlappingEntry.activity.length <= 50) {
+                errorMessage += ` - ${overlappingEntry.activity}`;
+              }
+            }
+            
+            // Handle specific error cases
+            if (error.status === 400) {
+              // Keep the extracted message if we have one, otherwise use default
+              if (errorMessage === 'Failed to create timesheet entry. Please try again.') {
+                errorMessage = 'Invalid data. Please check your input and try again.';
+              }
+            } else if (error.status === 401) {
+              errorMessage = 'Your session has expired. Please log in again.';
+            } else if (error.status === 403) {
+              errorMessage = 'You do not have permission to create entries.';
+            } else if (error.status === 409) {
+              errorMessage = errorMessage || 'A timesheet entry already exists for this time period.';
+            } else if (error.status === 500) {
+              errorMessage = 'Server error. Please try again later or contact support.';
+            } else if (error.status === 0 || error.status === undefined) {
+              errorMessage = 'Network error. Please check your connection and try again.';
+            }
+            
+            console.log('📢 Showing error toast:', errorMessage);
+            
+            // Always show the error message - use setTimeout to ensure it appears after any dialog animations
+            setTimeout(() => {
+              const snackBarRef = this.snackBar.open(
+                errorMessage,
+                'Close',
+                {
+                  duration: 8000, // Longer duration for overlap messages
+                  horizontalPosition: 'center',
+                  verticalPosition: 'top',
+                  panelClass: ['error-snackbar']
+                }
+              );
+              
+              // Ensure snackbar appears above dialog by setting z-index on the overlay pane
+              snackBarRef.afterOpened().subscribe(() => {
+                // Find the snackbar container
+                const snackbarElement = document.querySelector('.mat-mdc-snack-bar-container');
+                if (snackbarElement) {
+                  (snackbarElement as HTMLElement).style.zIndex = '10001';
+                  // Also set z-index on parent overlay pane
+                  const overlayPane = snackbarElement.closest('.cdk-overlay-pane');
+                  if (overlayPane) {
+                    (overlayPane as HTMLElement).style.zIndex = '10001';
+                  }
+                }
+              });
+            }, 100);
           }
         });
       }
     } else {
       console.log('❌ Form is invalid');
       console.log('Form errors:', this.form.errors);
+      
+      // Collect all validation errors
+      const validationErrors: string[] = [];
       Object.keys(this.form.controls).forEach(key => {
         const control = this.form.get(key);
         if (control?.errors) {
           console.log(`${key} errors:`, control.errors);
+          
+          if (control.errors['required']) {
+            const fieldName = this.getFieldDisplayName(key);
+            validationErrors.push(`${fieldName} is required`);
+          } else if (control.errors['timeRange']) {
+            validationErrors.push('End time must be after start time');
+          }
         }
       });
+      
+      // Show form validation error toast
+      const errorMessage = validationErrors.length > 0 
+        ? `Please fix the following errors: ${validationErrors.join(', ')}`
+        : 'Please fill in all required fields correctly.';
+      
+      this.snackBar.open(
+        errorMessage,
+        'Close',
+        {
+          duration: 5000,
+          horizontalPosition: 'center',
+          verticalPosition: 'top',
+          panelClass: ['error-snackbar']
+        }
+      );
     }
   }
 } 

@@ -104,11 +104,19 @@ import { AuthService, User } from '../services/auth.service';
               <mat-form-field appearance="outline" class="form-field">
                 <mat-label>Department</mat-label>
                 <mat-select formControlName="department">
+                  <mat-option value="Litigation">Litigation</mat-option>
+                  <mat-option value="Accounts">Accounts</mat-option>
+                  <mat-option value="Property_Conveyancing">Property_Conveyancing</mat-option>
                   <mat-option value="Operations">Operations</mat-option>
-                  <mat-option value="Legal">Legal</mat-option>
-                  <mat-option value="Finance">Finance</mat-option>
                   <mat-option value="HR">HR</mat-option>
+                  <mat-option value="CRM">CRM</mat-option>
+                  <mat-option value="KYC_Compliance">KYC_Compliance</mat-option>
+                  <mat-option value="Registry">Registry</mat-option>
+                  <mat-option value="Hospitality">Hospitality</mat-option>
                   <mat-option value="IT">IT</mat-option>
+                  <mat-option value="Front Office">Front Office</mat-option>
+                  <mat-option value="Corporate">Corporate</mat-option>
+                  <mat-option value="Logistics & Fleet">Logistics & Fleet</mat-option>
                 </mat-select>
                 <mat-icon matSuffix>business</mat-icon>
                 <mat-error *ngIf="userForm.get('department')?.hasError('required')">

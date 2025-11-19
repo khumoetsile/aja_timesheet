@@ -164,6 +164,10 @@ import { ReportService, ReportData, ReportFilters } from '../services/report.ser
               <th mat-header-cell *matHeaderCellDef mat-sort-header>Task</th>
               <td mat-cell *matCellDef="let e">{{e.task}}</td>
             </ng-container>
+            <ng-container matColumnDef="activity">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Activity</th>
+              <td mat-cell *matCellDef="let e">{{e.activity || '-'}}</td>
+            </ng-container>
             <ng-container matColumnDef="timeRange">
               <th mat-header-cell *matHeaderCellDef mat-sort-header>Time Range</th>
               <td mat-cell *matCellDef="let e">{{e.start_time}} - {{e.end_time}}</td>
@@ -231,7 +235,7 @@ export class AdminReportDetailComponent implements OnInit, AfterViewInit {
     return this.userRole === 'ADMIN';
   }
 
-  displayedColumns = ['date','user','department','task','timeRange','hours','status','created'];
+  displayedColumns = ['date','user','department','task','activity','timeRange','hours','status','created'];
   report: ReportData | null = null;
   filters: FilterParams = {};
   dateFrom?: Date;
